@@ -3,10 +3,17 @@ import 'package:flutter/services.dart';
 import 'package:sizer/sizer.dart';
 
 import '../../core/app_export.dart';
+import '../../core/activity_recommendation_engine.dart';
 import './widgets/child_profile_card.dart';
 import './widgets/custom_tab_navigation.dart';
 import './widgets/dashboard_header.dart';
 import './widgets/empty_state_widget.dart';
+// Import new screens
+import '../activity_detail/activity_detail_screen.dart';
+import '../child_activity/child_activity_screen.dart';
+import '../progress_tracking/progress_dashboard_screen.dart';
+import '../multi_parent_management/multi_parent_screen.dart';
+import '../subscription/subscription_screen.dart';
 
 class ChildSelectionDashboard extends StatefulWidget {
   const ChildSelectionDashboard({super.key});
@@ -237,33 +244,109 @@ class _ChildSelectionDashboardState extends State<ChildSelectionDashboard> {
     final theme = Theme.of(context);
     final isDark = theme.brightness == Brightness.dark;
 
-    return Center(
+    return Padding(
+      padding: EdgeInsets.all(4.w),
       child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          CustomIconWidget(
-            iconName: 'settings',
-            color: isDark ? AppTheme.primaryDark : AppTheme.primaryLight,
-            size: 20.w,
-          ),
           SizedBox(height: 2.h),
           Text(
-            'Settings',
+            'Settings & Management',
             style: theme.textTheme.headlineMedium?.copyWith(
               fontWeight: FontWeight.w600,
             ),
           ),
-          SizedBox(height: 1.h),
-          Text(
-            'Manage app preferences and account settings',
-            style: theme.textTheme.bodyLarge?.copyWith(
-              color: isDark
-                  ? AppTheme.textSecondaryDark
-                  : AppTheme.textSecondaryLight,
-            ),
-            textAlign: TextAlign.center,
+          SizedBox(height: 3.h),
+          _buildSettingsCard(
+            icon: 'people',
+            title: 'Multi-Parent Management',
+            subtitle: 'Invite and manage other parents',
+            onTap: () => _navigateToMultiParent(),
+          ),
+          SizedBox(height: 2.h),
+          _buildSettingsCard(
+            icon: 'subscriptions',
+            title: 'Subscription & Billing',
+            subtitle: 'Manage your subscription plan',
+            onTap: () => _navigateToSubscription(),
+          ),
+          SizedBox(height: 2.h),
+          _buildSettingsCard(
+            icon: 'analytics',
+            title: 'Progress Dashboard',
+            subtitle: 'View detailed progress reports',
+            onTap: () => _navigateToProgressDashboard(),
           ),
         ],
+      ),
+    );
+  }
+
+  Widget _buildSettingsCard({
+    required String icon,
+    required String title,
+    required String subtitle,
+    required VoidCallback onTap,
+  }) {
+    final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
+
+    return Card(
+      elevation: 2,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(16),
+      ),
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(16),
+        child: Padding(
+          padding: EdgeInsets.all(4.w),
+          child: Row(
+            children: [
+              Container(
+                padding: EdgeInsets.all(3.w),
+                decoration: BoxDecoration(
+                  color: isDark ? AppTheme.primaryDark : AppTheme.primaryLight,
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: CustomIconWidget(
+                  iconName: icon,
+                  color: isDark ? AppTheme.onPrimaryDark : AppTheme.onPrimaryLight,
+                  size: 24,
+                ),
+              ),
+              SizedBox(width: 4.w),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      title,
+                      style: theme.textTheme.titleMedium?.copyWith(
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                    SizedBox(height: 0.5.h),
+                    Text(
+                      subtitle,
+                      style: theme.textTheme.bodyMedium?.copyWith(
+                        color: isDark
+                            ? AppTheme.textSecondaryDark
+                            : AppTheme.textSecondaryLight,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              CustomIconWidget(
+                iconName: 'chevron_right',
+                color: isDark
+                    ? AppTheme.textSecondaryDark
+                    : AppTheme.textSecondaryLight,
+                size: 20,
+              ),
+            ],
+          ),
+        ),
       ),
     );
   }
@@ -359,20 +442,83 @@ class _ChildSelectionDashboardState extends State<ChildSelectionDashboard> {
 
   void _selectChild(Map<String, dynamic> child) {
     HapticFeedback.lightImpact();
-    // Navigate to child's main dashboard
-    Navigator.pushNamed(context, '/child-profile-creation');
+    // Navigate to child's main activity interface
+    final childData = _createChildFromMap(child);
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => ChildActivityScreen(child: childData),
+      ),
+    );
   }
 
   void _startActivity(Map<String, dynamic> child) {
     HapticFeedback.lightImpact();
     // Navigate to activity selection for this child
-    Navigator.pushNamed(context, '/parent-onboarding');
+    final childData = _createChildFromMap(child);
+    // Create a sample activity for demonstration
+    final sampleActivity = Activity(
+      id: 'sample_activity_1',
+      name: 'Creative Drawing',
+      description: 'Draw your favorite animal using colors and imagination',
+      relatedHobbies: ['Drawing', 'Art'],
+      requiredTools: ['Paper', 'Crayons'],
+      duration: 30,
+      minAge: 2,
+      maxAge: 6,
+      activityType: 'creative',
+      requiresParent: false,
+      needsCamera: false,
+      needsCameraEvaluation: false,
+      energyLevel: 'low',
+      hasAudioInstructions: true,
+      hasVisualInstructions: true,
+      hasPoints: true,
+      allowsResultUpload: true,
+      expectedOutput: 'image',
+      needsParentFeedback: false,
+    );
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => ActivityDetailScreen(
+          activity: sampleActivity,
+          child: childData,
+        ),
+      ),
+    );
   }
 
   void _viewProgress(Map<String, dynamic> child) {
     HapticFeedback.lightImpact();
     // Navigate to progress view for this child
-    Navigator.pushNamed(context, '/parent-registration');
+    final childData = _createChildFromMap(child);
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => ProgressDashboardScreen(child: childData),
+      ),
+    );
+  }
+
+  // Helper method to convert Map to Child object
+  Child _createChildFromMap(Map<String, dynamic> childMap) {
+    return Child(
+      id: childMap['id'].toString(),
+      name: childMap['name'] ?? '',
+      surname: '',
+      birthDate: DateTime.now().subtract(Duration(days: (childMap['age'] ?? 3) * 365)),
+      gender: childMap['gender'] ?? 'Unknown',
+      hobbies: List<String>.from(childMap['hobbies'] ?? []),
+      hasScreenDependency: true,
+      screenDependencyLevel: 'normal',
+      usesScreenDuringMeals: false,
+      wantsToChange: true,
+      dailyPlayTime: '1h',
+      parentIds: ['parent1'],
+      relationshipToParent: 'mother',
+      hasCameraPermission: true,
+    );
   }
 
   void _editProfile(Map<String, dynamic> child) {
@@ -431,6 +577,53 @@ class _ChildSelectionDashboardState extends State<ChildSelectionDashboard> {
   void _navigateToNotifications() {
     HapticFeedback.lightImpact();
     Navigator.pushNamed(context, '/parent-onboarding');
+  }
+
+  void _navigateToMultiParent() {
+    HapticFeedback.lightImpact();
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => const MultiParentScreen(),
+      ),
+    );
+  }
+
+  void _navigateToSubscription() {
+    HapticFeedback.lightImpact();
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => const SubscriptionScreen(),
+      ),
+    );
+  }
+
+  void _navigateToProgressDashboard() {
+    HapticFeedback.lightImpact();
+    // Create a sample child for the progress dashboard
+    final sampleChild = Child(
+      id: 'sample_child_1',
+      name: 'Emma',
+      surname: 'Rodriguez',
+      birthDate: DateTime.now().subtract(Duration(days: 4 * 365)),
+      gender: 'Female',
+      hobbies: ['Drawing', 'Dancing', 'Building blocks'],
+      hasScreenDependency: true,
+      screenDependencyLevel: 'normal',
+      usesScreenDuringMeals: false,
+      wantsToChange: true,
+      dailyPlayTime: '1h',
+      parentIds: ['parent1'],
+      relationshipToParent: 'mother',
+      hasCameraPermission: true,
+    );
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => ProgressDashboardScreen(child: sampleChild),
+      ),
+    );
   }
 
   void _showConfirmationDialog(
