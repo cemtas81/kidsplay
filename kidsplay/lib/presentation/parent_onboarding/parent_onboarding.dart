@@ -76,8 +76,15 @@ class _ParentOnboardingState extends State<ParentOnboarding>
   void initState() {
     super.initState();
     _initializeControllers();
-    _detectLanguageDirection();
     _startAutoAdvance();
+    // _detectLanguageDirection(); <-- REMOVED, bug: cannot use context in initState
+  }
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    final locale = Localizations.localeOf(context);
+    _isRTL = locale.languageCode == 'ar';
   }
 
   void _initializeControllers() {
@@ -94,11 +101,6 @@ class _ParentOnboardingState extends State<ParentOnboarding>
       curve: Curves.easeInOut,
     ));
     _fadeController.forward();
-  }
-
-  void _detectLanguageDirection() {
-    final locale = Localizations.localeOf(context);
-    _isRTL = locale.languageCode == 'ar';
   }
 
   void _startAutoAdvance() {
