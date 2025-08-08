@@ -80,7 +80,7 @@ class AppTheme {
       onSecondaryContainer: onSecondaryLight,
       tertiary: accentLight,
       onTertiary: onPrimaryLight,
-      tertiaryContainer: accentLight.withValues(alpha: 0.2),
+      tertiaryContainer: accentLight.withAlpha(51),
       onTertiaryContainer: textPrimaryLight,
       error: errorLight,
       onError: onErrorLight,
@@ -88,7 +88,7 @@ class AppTheme {
       onSurface: onSurfaceLight,
       onSurfaceVariant: textSecondaryLight,
       outline: dividerLight,
-      outlineVariant: dividerLight.withValues(alpha: 0.5),
+      outlineVariant: dividerLight.withAlpha(128),
       shadow: shadowLight,
       scrim: shadowLight,
       inverseSurface: surfaceDark,
@@ -124,7 +124,7 @@ class AppTheme {
     ),
 
     // Card theme with subtle elevation
-    cardTheme: CardTheme(
+    cardTheme: CardThemeData(
       color: cardLight,
       elevation: 2,
       shadowColor: shadowLight,
@@ -171,7 +171,7 @@ class AppTheme {
         foregroundColor: onPrimaryLight,
         backgroundColor: primaryLight,
         disabledForegroundColor: textDisabledLight,
-        disabledBackgroundColor: textDisabledLight.withValues(alpha: 0.12),
+        disabledBackgroundColor: textDisabledLight.withAlpha(31),
         elevation: 2,
         padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
         minimumSize: const Size(88, 48),
@@ -276,9 +276,9 @@ class AppTheme {
       }),
       trackColor: WidgetStateProperty.resolveWith((states) {
         if (states.contains(WidgetState.selected)) {
-          return primaryLight.withValues(alpha: 0.5);
+          return primaryLight.withAlpha(128);
         }
-        return textDisabledLight.withValues(alpha: 0.3);
+        return textDisabledLight.withAlpha(77);
       }),
     ),
 
@@ -318,14 +318,14 @@ class AppTheme {
     sliderTheme: SliderThemeData(
       activeTrackColor: primaryLight,
       thumbColor: primaryLight,
-      overlayColor: primaryLight.withValues(alpha: 0.2),
-      inactiveTrackColor: primaryLight.withValues(alpha: 0.3),
+      overlayColor: primaryLight.withAlpha(51),
+      inactiveTrackColor: primaryLight.withAlpha(77),
       trackHeight: 4,
       thumbShape: const RoundSliderThumbShape(enabledThumbRadius: 8),
     ),
 
     // Tab bar theme
-    tabBarTheme: TabBarTheme(
+    tabBarTheme: TabBarThemeData(
       labelColor: primaryLight,
       unselectedLabelColor: textSecondaryLight,
       indicatorColor: primaryLight,
@@ -343,7 +343,7 @@ class AppTheme {
     // Tooltip theme
     tooltipTheme: TooltipThemeData(
       decoration: BoxDecoration(
-        color: textPrimaryLight.withValues(alpha: 0.9),
+        color: textPrimaryLight.withAlpha(230),
         borderRadius: BorderRadius.circular(8),
       ),
       textStyle: GoogleFonts.inter(
@@ -402,7 +402,7 @@ class AppTheme {
       onSecondaryContainer: onSecondaryDark,
       tertiary: accentDark,
       onTertiary: onPrimaryDark,
-      tertiaryContainer: accentDark.withValues(alpha: 0.2),
+      tertiaryContainer: accentDark.withAlpha(51),
       onTertiaryContainer: textPrimaryDark,
       error: errorDark,
       onError: onErrorDark,
@@ -410,7 +410,7 @@ class AppTheme {
       onSurface: onSurfaceDark,
       onSurfaceVariant: textSecondaryDark,
       outline: dividerDark,
-      outlineVariant: dividerDark.withValues(alpha: 0.5),
+      outlineVariant: dividerDark.withAlpha(128),
       shadow: shadowDark,
       scrim: shadowDark,
       inverseSurface: surfaceLight,
@@ -446,7 +446,7 @@ class AppTheme {
     ),
 
     // Card theme for dark mode
-    cardTheme: CardTheme(
+    cardTheme: CardThemeData(
       color: cardDark,
       elevation: 2,
       shadowColor: shadowDark,
@@ -493,7 +493,7 @@ class AppTheme {
         foregroundColor: onPrimaryDark,
         backgroundColor: primaryDark,
         disabledForegroundColor: textDisabledDark,
-        disabledBackgroundColor: textDisabledDark.withValues(alpha: 0.12),
+        disabledBackgroundColor: textDisabledDark.withAlpha(31),
         elevation: 2,
         padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
         minimumSize: const Size(88, 48),
@@ -598,9 +598,9 @@ class AppTheme {
       }),
       trackColor: WidgetStateProperty.resolveWith((states) {
         if (states.contains(WidgetState.selected)) {
-          return primaryDark.withValues(alpha: 0.5);
+          return primaryDark.withAlpha(128);
         }
-        return textDisabledDark.withValues(alpha: 0.3);
+        return textDisabledDark.withAlpha(77);
       }),
     ),
 
@@ -640,14 +640,14 @@ class AppTheme {
     sliderTheme: SliderThemeData(
       activeTrackColor: primaryDark,
       thumbColor: primaryDark,
-      overlayColor: primaryDark.withValues(alpha: 0.2),
-      inactiveTrackColor: primaryDark.withValues(alpha: 0.3),
+      overlayColor: primaryDark.withAlpha(51),
+      inactiveTrackColor: primaryDark.withAlpha(77),
       trackHeight: 4,
       thumbShape: const RoundSliderThumbShape(enabledThumbRadius: 8),
     ),
 
     // Tab bar theme for dark mode
-    tabBarTheme: TabBarTheme(
+    tabBarTheme: TabBarThemeData(
       labelColor: primaryDark,
       unselectedLabelColor: textSecondaryDark,
       indicatorColor: primaryDark,
@@ -665,7 +665,7 @@ class AppTheme {
     // Tooltip theme for dark mode
     tooltipTheme: TooltipThemeData(
       decoration: BoxDecoration(
-        color: textPrimaryDark.withValues(alpha: 0.9),
+        color: textPrimaryDark.withAlpha(230),
         borderRadius: BorderRadius.circular(8),
       ),
       textStyle: GoogleFonts.inter(
