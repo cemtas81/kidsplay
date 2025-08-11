@@ -19,6 +19,7 @@ class AppTheme {
   static const Color errorLight = Color(0xFFD67B7B); // Muted coral
   static const Color successLight = Color(0xFF7BA05B); // Deeper sage
   static const Color warningLight = Color(0xFFE8B86D); // Warm amber
+  static const Color infoLight = Color(0xFF9BB5D6); // Soft periwinkle
   static const Color onPrimaryLight = Color(0xFFFFFFFF);
   static const Color onSecondaryLight = Color(0xFF2D3A2D);
   static const Color onBackgroundLight = Color(0xFF2D3A2D); // Dark forest green
@@ -36,6 +37,7 @@ class AppTheme {
   static const Color errorDark = Color(0xFFD67B7B);
   static const Color successDark = Color(0xFF7BA05B);
   static const Color warningDark = Color(0xFFE8B86D);
+  static const Color infoDark = Color(0xFF9BB5D6);
   static const Color onPrimaryDark = Color(0xFF2D3A2D);
   static const Color onSecondaryDark = Color(0xFF2D3A2D);
   static const Color onBackgroundDark = Color(0xFFFAFBFA);
@@ -864,4 +866,20 @@ class AppTheme {
   static Color getAccentColor(bool isLight) {
     return isLight ? accentLight : accentDark;
   }
+
+  /// Get info color based on theme brightness
+  static Color getInfoColor(bool isLight) {
+    return isLight ? infoLight : infoDark;
+  }
+
+  /// Get error color based on theme brightness
+  static Color getErrorColor(bool isLight) {
+    return isLight ? errorLight : errorDark;
+  }
+
+  // Convenience getters for semantic colors (use light theme colors as defaults)
+  static Color get success => successLight;
+  static Color get warning => warningLight;
+  static Color get error => errorLight;
+  static Color get info => infoLight;
 }
