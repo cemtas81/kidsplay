@@ -26,22 +26,24 @@ class OnboardingSlideWidget extends StatelessWidget {
       label: 'Onboarding slide: $title',
       child: Container(
         width: 100.w,
-        height: 100.h,
-        padding: EdgeInsets.symmetric(horizontal: 6.w, vertical: 4.h),
+        // Remove fixed height constraint
+        padding: EdgeInsets.symmetric(horizontal: 6.w, vertical: 2.h),
         child: Column(
+          mainAxisSize: MainAxisSize.min, // Change to min
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            // Illustration - 60% of screen height
+            // Illustration - Reduce height
             Container(
               width: 85.w,
-              height: 50.h,
+              height: 40.h, // Reduced from 50.h
               decoration: BoxDecoration(
                 borderRadius: BorderRadius.circular(20),
                 boxShadow: [
                   BoxShadow(
                     color: isDark
-                        ? Colors.black.withValues(alpha: 0.3)
-                        : Colors.black.withValues(alpha: 0.1),
+                        ? Colors.black
+                            .withOpacity(0.3) // Fixed withValues to withOpacity
+                        : Colors.black.withOpacity(0.1),
                     offset: const Offset(0, 8),
                     blurRadius: 24,
                     spreadRadius: 0,
@@ -53,13 +55,13 @@ class OnboardingSlideWidget extends StatelessWidget {
                 child: CustomImageWidget(
                   imageUrl: imageUrl,
                   width: 85.w,
-                  height: 50.h,
+                  height: 40.h, // Reduced from 50.h
                   fit: BoxFit.cover,
                 ),
               ),
             ),
 
-            SizedBox(height: 4.h),
+            SizedBox(height: 2.h), // Reduced from 4.h
 
             // Title
             Text(
@@ -76,12 +78,14 @@ class OnboardingSlideWidget extends StatelessWidget {
               overflow: TextOverflow.ellipsis,
             ),
 
-            SizedBox(height: 3.h),
+            SizedBox(height: 2.h), // Reduced from 3.h
 
-            // Bullet Points
-            Expanded(
+            // Bullet Points - Wrap in ConstrainedBox with fixed height
+            ConstrainedBox(
+              constraints: BoxConstraints(maxHeight: 25.h),
               child: SingleChildScrollView(
                 child: Column(
+                  mainAxisSize: MainAxisSize.min, // Add this
                   children: bulletPoints
                       .map((point) => _buildBulletPoint(
                             context,
@@ -101,7 +105,7 @@ class OnboardingSlideWidget extends StatelessWidget {
   Widget _buildBulletPoint(BuildContext context, String text, bool isDark) {
     return Container(
       width: 85.w,
-      margin: EdgeInsets.only(bottom: 2.h),
+      margin: EdgeInsets.only(bottom: 1.5.h), // Reduced from 2.h
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         textDirection: isRTL ? TextDirection.rtl : TextDirection.ltr,
@@ -110,7 +114,7 @@ class OnboardingSlideWidget extends StatelessWidget {
             width: 8,
             height: 8,
             margin: EdgeInsets.only(
-              top: 1.h,
+              top: 0.8.h, // Reduced from 1.h
               right: isRTL ? 0 : 3.w,
               left: isRTL ? 3.w : 0,
             ),
@@ -126,7 +130,7 @@ class OnboardingSlideWidget extends StatelessWidget {
                     color: isDark
                         ? AppTheme.textSecondaryDark
                         : AppTheme.textSecondaryLight,
-                    height: 1.5,
+                    height: 1.4, // Reduced from 1.5
                     fontWeight: FontWeight.w400,
                   ),
               textAlign: isRTL ? TextAlign.right : TextAlign.left,

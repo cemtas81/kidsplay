@@ -1,9 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:sizer/sizer.dart';
-import 'package:google_fonts/google_fonts.dart';
-import 'package:flutter_svg/flutter_svg.dart';
 import '../../widgets/custom_app_bar.dart';
 import '../../core/activity_recommendation_engine.dart';
+import '../../theme/app_theme.dart';
 
 class SubscriptionScreen extends StatefulWidget {
   const SubscriptionScreen({Key? key}) : super(key: key);
@@ -34,7 +33,7 @@ class _SubscriptionScreenState extends State<SubscriptionScreen> {
         surname: 'Yılmaz',
         birthDate: DateTime(2020, 5, 15),
         gender: 'female',
-        hobbies: ['resim', 'müzik'],
+        hobbies: ['drawing', 'music'],
         hasScreenDependency: false,
         screenDependencyLevel: 'low',
         usesScreenDuringMeals: false,
@@ -50,7 +49,7 @@ class _SubscriptionScreenState extends State<SubscriptionScreen> {
         surname: 'Yılmaz',
         birthDate: DateTime(2022, 3, 10),
         gender: 'male',
-        hobbies: ['oyun', 'spor'],
+        hobbies: ['games', 'sports'],
         hasScreenDependency: true,
         screenDependencyLevel: 'high',
         usesScreenDuringMeals: true,
@@ -64,30 +63,34 @@ class _SubscriptionScreenState extends State<SubscriptionScreen> {
 
     _currentPlan = SubscriptionPlan(
       id: 'standard',
-      name: 'Standart',
+      name: 'Standard',
       price: 7.99,
       currency: 'USD',
       period: 'month',
       features: [
-        'Tüm aktivitelere sınırsız erişim',
-        'Gelişim takibi ve rozetler',
-        'Çoklu ebeveyn yönetimi',
-        'İlerleme desteği',
+        'Unlimited access to all activities',
+        'Development tracking and badges',
+        'Multi-parent management',
+        'Progress support',
       ],
       limitations: [
-        'Kamera desteği yok',
-        'Canlı izleme yok',
-        'Video kaydı yok',
+        'No camera support',
+        'No live viewing',
+        'No video recording',
       ],
     );
   }
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
+
     return Scaffold(
-      backgroundColor: const Color(0xFFF8F9FA),
+      backgroundColor:
+          isDark ? AppTheme.backgroundDark : AppTheme.backgroundLight,
       appBar: CustomAppBar(
-        title: 'Üyelik ve Planlar',
+        title: 'Subscription & Plans',
         automaticallyImplyLeading: true,
         onBackPressed: () => Navigator.pop(context),
       ),
@@ -96,40 +99,38 @@ class _SubscriptionScreenState extends State<SubscriptionScreen> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            _buildCurrentPlanCard(),
+            _buildCurrentPlanCard(theme),
             SizedBox(height: 3.h),
-            _buildChildrenSection(),
+            _buildChildrenSection(theme),
             SizedBox(height: 3.h),
-            _buildPlanComparison(),
+            _buildPlanComparison(theme),
             SizedBox(height: 3.h),
-            _buildVoucherSection(),
+            _buildVoucherSection(theme),
             SizedBox(height: 3.h),
-            _buildPricingBreakdown(),
+            _buildPricingBreakdown(theme),
             SizedBox(height: 3.h),
-            _buildActionButtons(),
+            _buildActionButtons(theme),
           ],
         ),
       ),
     );
   }
 
-  Widget _buildCurrentPlanCard() {
+  Widget _buildCurrentPlanCard(ThemeData theme) {
     if (_currentPlan == null) return const SizedBox.shrink();
+
+    final isDark = theme.brightness == Brightness.dark;
 
     return Container(
       padding: EdgeInsets.all(4.w),
       decoration: BoxDecoration(
-        gradient: const LinearGradient(
-          colors: [Color(0xFF6C63FF), Color(0xFF8B7CF6)],
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-        ),
-        borderRadius: BorderRadius.circular(16),
+        color: isDark ? AppTheme.surfaceDark : AppTheme.surfaceLight,
+        borderRadius: BorderRadius.circular(12),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.1),
-            blurRadius: 10,
-            offset: const Offset(0, 4),
+            color: isDark ? AppTheme.shadowDark : AppTheme.shadowLight,
+            blurRadius: 8,
+            offset: const Offset(0, 2),
           ),
         ],
       ),
@@ -140,17 +141,19 @@ class _SubscriptionScreenState extends State<SubscriptionScreen> {
             children: [
               Icon(
                 Icons.star,
-                color: Colors.white,
+                color:
+                    isDark ? AppTheme.onSurfaceDark : AppTheme.onSurfaceLight,
                 size: 24.sp,
               ),
               SizedBox(width: 2.w),
               Expanded(
                 child: Text(
-                  'Mevcut Plan',
-                  style: GoogleFonts.poppins(
-                    fontSize: 16.sp,
+                  'Current Plan',
+                  style: theme.textTheme.titleMedium?.copyWith(
                     fontWeight: FontWeight.w600,
-                    color: Colors.white,
+                    color: isDark
+                        ? AppTheme.onSurfaceDark
+                        : AppTheme.onSurfaceLight,
                   ),
                 ),
               ),
@@ -159,115 +162,52 @@ class _SubscriptionScreenState extends State<SubscriptionScreen> {
           SizedBox(height: 1.h),
           Text(
             _currentPlan!.name,
-            style: GoogleFonts.poppins(
-              fontSize: 24.sp,
+            style: theme.textTheme.headlineMedium?.copyWith(
               fontWeight: FontWeight.bold,
-              color: Colors.white,
+              color: isDark ? AppTheme.onSurfaceDark : AppTheme.onSurfaceLight,
             ),
           ),
           SizedBox(height: 0.5.h),
           Text(
             '\$${_currentPlan!.price.toStringAsFixed(2)}/${_currentPlan!.period}',
-            style: GoogleFonts.poppins(
-              fontSize: 18.sp,
-              color: Colors.white.withOpacity(0.9),
+            style: theme.textTheme.titleLarge?.copyWith(
+              color: isDark
+                  ? AppTheme.textSecondaryDark
+                  : AppTheme.textSecondaryLight,
             ),
           ),
-          SizedBox(height: 2.h),
-          Text(
-            'Özellikler:',
-            style: GoogleFonts.poppins(
-              fontSize: 14.sp,
-              fontWeight: FontWeight.w600,
-              color: Colors.white,
-            ),
-          ),
-          SizedBox(height: 1.h),
-          ..._currentPlan!.features.map((feature) => Padding(
-            padding: EdgeInsets.only(bottom: 0.5.h),
-            child: Row(
-              children: [
-                Icon(
-                  Icons.check_circle,
-                  color: Colors.white,
-                  size: 16.sp,
-                ),
-                SizedBox(width: 2.w),
-                Expanded(
-                  child: Text(
-                    feature,
-                    style: GoogleFonts.poppins(
-                      fontSize: 12.sp,
-                      color: Colors.white.withOpacity(0.9),
-                    ),
-                  ),
-                ),
-              ],
-            ),
-          )),
         ],
       ),
     );
   }
 
-  Widget _buildChildrenSection() {
-    return Container(
-      padding: EdgeInsets.all(4.w),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(12),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.05),
-            blurRadius: 8,
-            offset: const Offset(0, 2),
-          ),
-        ],
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text(
-            'Çocuklar (${_children.length})',
-            style: GoogleFonts.poppins(
-              fontSize: 16.sp,
-              fontWeight: FontWeight.w600,
-              color: const Color(0xFF333333),
-            ),
-          ),
-          SizedBox(height: 2.h),
-          ..._children.map((child) => _buildChildItem(child)),
-          SizedBox(height: 2.h),
-          _buildDiscountInfo(),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildChildItem(Child child) {
+  Widget _buildChildItem(ThemeData theme, Child child) {
+    final isDark = theme.brightness == Brightness.dark;
     int age = DateTime.now().year - child.birthDate.year;
-    if (DateTime.now().month < child.birthDate.month || 
-        (DateTime.now().month == child.birthDate.month && DateTime.now().day < child.birthDate.day)) {
+    if (DateTime.now().month < child.birthDate.month ||
+        (DateTime.now().month == child.birthDate.month &&
+            DateTime.now().day < child.birthDate.day)) {
       age--;
     }
     return Container(
       margin: EdgeInsets.only(bottom: 1.h),
       padding: EdgeInsets.all(3.w),
       decoration: BoxDecoration(
-        color: const Color(0xFFF8F9FA),
+        color: isDark ? AppTheme.surfaceDark : AppTheme.surfaceLight,
         borderRadius: BorderRadius.circular(8),
       ),
       child: Row(
         children: [
           CircleAvatar(
             radius: 6.w,
-            backgroundColor: const Color(0xFF6C63FF).withOpacity(0.1),
+            backgroundColor:
+                isDark ? AppTheme.primaryDark : AppTheme.primaryLight,
             child: Text(
               child.name[0],
-              style: GoogleFonts.poppins(
-                fontSize: 14.sp,
+              style: theme.textTheme.titleMedium?.copyWith(
                 fontWeight: FontWeight.bold,
-                color: const Color(0xFF6C63FF),
+                color:
+                    isDark ? AppTheme.onPrimaryDark : AppTheme.onPrimaryLight,
               ),
             ),
           ),
@@ -278,28 +218,29 @@ class _SubscriptionScreenState extends State<SubscriptionScreen> {
               children: [
                 Text(
                   '${child.name} ${child.surname}',
-                  style: GoogleFonts.poppins(
-                    fontSize: 14.sp,
+                  style: theme.textTheme.titleMedium?.copyWith(
                     fontWeight: FontWeight.w600,
-                    color: const Color(0xFF333333),
+                    color: isDark
+                        ? AppTheme.onSurfaceDark
+                        : AppTheme.onSurfaceLight,
                   ),
                 ),
                 Text(
-                  '$age yaşında',
-                  style: GoogleFonts.poppins(
-                    fontSize: 12.sp,
-                    color: const Color(0xFF666666),
+                  '$age years old',
+                  style: theme.textTheme.bodyMedium?.copyWith(
+                    color: isDark
+                        ? AppTheme.textSecondaryDark
+                        : AppTheme.textSecondaryLight,
                   ),
                 ),
               ],
             ),
           ),
           Text(
-            '\$${_currentPlan?.price.toStringAsFixed(2) ?? '0.00'}/ay',
-            style: GoogleFonts.poppins(
-              fontSize: 14.sp,
+            '\$${_currentPlan?.price.toStringAsFixed(2) ?? '0.00'}/mo',
+            style: theme.textTheme.titleMedium?.copyWith(
               fontWeight: FontWeight.w600,
-              color: const Color(0xFF6C63FF),
+              color: isDark ? AppTheme.primaryDark : AppTheme.primaryLight,
             ),
           ),
         ],
@@ -307,16 +248,48 @@ class _SubscriptionScreenState extends State<SubscriptionScreen> {
     );
   }
 
-  Widget _buildDiscountInfo() {
+  Widget _buildChildrenSection(ThemeData theme) {
+    final isDark = theme.brightness == Brightness.dark;
+
+    return Container(
+      padding: EdgeInsets.all(4.w),
+      decoration: BoxDecoration(
+        color: isDark ? AppTheme.surfaceDark : AppTheme.surfaceLight,
+        borderRadius: BorderRadius.circular(12),
+        boxShadow: [
+          BoxShadow(
+            color: isDark ? AppTheme.shadowDark : AppTheme.shadowLight,
+            blurRadius: 8,
+            offset: const Offset(0, 2),
+          ),
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            'Children (${_children.length})',
+            style: theme.textTheme.titleMedium?.copyWith(
+              fontWeight: FontWeight.w600,
+            ),
+          ),
+          SizedBox(height: 2.h),
+          ..._children.map((child) => _buildChildItem(theme, child)),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildDiscountInfo(ThemeData theme) {
     double discount = 0.0;
     String discountText = '';
 
     if (_children.length == 2) {
       discount = 0.15;
-      discountText = '2. çocuk için %15 indirim';
+      discountText = '15% off for the 2nd child';
     } else if (_children.length >= 3) {
       discount = 0.25;
-      discountText = '3+ çocuk için %25 indirim';
+      discountText = '25% off for 3+ children';
     }
 
     if (discount > 0) {
@@ -338,8 +311,7 @@ class _SubscriptionScreenState extends State<SubscriptionScreen> {
             Expanded(
               child: Text(
                 discountText,
-                style: GoogleFonts.poppins(
-                  fontSize: 14.sp,
+                style: theme.textTheme.bodyMedium?.copyWith(
                   fontWeight: FontWeight.w600,
                   color: const Color(0xFF4CAF50),
                 ),
@@ -353,42 +325,42 @@ class _SubscriptionScreenState extends State<SubscriptionScreen> {
     return const SizedBox.shrink();
   }
 
-  Widget _buildPlanComparison() {
+  Widget _buildPlanComparison(ThemeData theme) {
     final plans = [
       SubscriptionPlan(
         id: 'free',
-        name: 'Ücretsiz',
+        name: 'Free',
         price: 0.0,
         currency: 'USD',
         period: 'month',
         features: [
-          'Günde 1 aktivite',
-          'Temel özellikler',
+          '1 activity per day',
+          'Basic features',
         ],
         limitations: [
-          'Kamera desteği yok',
-          'Gelişim takibi yok',
-          'İlerleme grafikleri yok',
-          'Ebeveyn puanlaması yok',
-          'Diğer ebeveynle paylaşım yok',
+          'No camera support',
+          'No development tracking',
+          'No progress charts',
+          'No parent scoring',
+          'No sharing with other parent',
         ],
       ),
       SubscriptionPlan(
         id: 'standard',
-        name: 'Standart',
+        name: 'Standard',
         price: 7.99,
         currency: 'USD',
         period: 'month',
         features: [
-          'Tüm aktivitelere sınırsız erişim',
-          'Gelişim takibi ve rozetler',
-          'Çoklu ebeveyn yönetimi',
-          'İlerleme desteği',
+          'Unlimited access to all activities',
+          'Development tracking and badges',
+          'Multi-parent management',
+          'Progress support',
         ],
         limitations: [
-          'Kamera desteği yok',
-          'Canlı izleme yok',
-          'Video kaydı yok',
+          'No camera support',
+          'No live viewing',
+          'No video recording',
         ],
       ),
       SubscriptionPlan(
@@ -398,11 +370,11 @@ class _SubscriptionScreenState extends State<SubscriptionScreen> {
         currency: 'USD',
         period: 'month',
         features: [
-          'Tüm Standart özellikler',
-          'Kamera destekli aktiviteler',
-          'Video kaydı (15 gün saklama)',
-          'Ebeveyn video indirme',
-          'Canlı izleme',
+          'All Standard features',
+          'Camera-enabled activities',
+          'Video recording (15 days storage)',
+          'Parent video download',
+          'Live viewing',
         ],
         limitations: [],
       ),
@@ -412,20 +384,19 @@ class _SubscriptionScreenState extends State<SubscriptionScreen> {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Text(
-          'Plan Karşılaştırması',
-          style: GoogleFonts.poppins(
-            fontSize: 18.sp,
+          'Plan Comparison',
+          style: theme.textTheme.titleLarge?.copyWith(
             fontWeight: FontWeight.w600,
             color: const Color(0xFF333333),
           ),
         ),
         SizedBox(height: 2.h),
-        ...plans.map((plan) => _buildPlanCard(plan)),
+        ...plans.map((plan) => _buildPlanCard(theme, plan)),
       ],
     );
   }
 
-  Widget _buildPlanCard(SubscriptionPlan plan) {
+  Widget _buildPlanCard(ThemeData theme, SubscriptionPlan plan) {
     bool isSelected = _selectedPlan == plan.id;
     bool isCurrent = _currentPlan?.id == plan.id;
 
@@ -458,16 +429,14 @@ class _SubscriptionScreenState extends State<SubscriptionScreen> {
                   children: [
                     Text(
                       plan.name,
-                      style: GoogleFonts.poppins(
-                        fontSize: 18.sp,
+                      style: theme.textTheme.titleMedium?.copyWith(
                         fontWeight: FontWeight.w600,
                         color: const Color(0xFF333333),
                       ),
                     ),
                     Text(
                       '\$${plan.price.toStringAsFixed(2)}/${plan.period}',
-                      style: GoogleFonts.poppins(
-                        fontSize: 16.sp,
+                      style: theme.textTheme.titleMedium?.copyWith(
                         fontWeight: FontWeight.w600,
                         color: const Color(0xFF6C63FF),
                       ),
@@ -477,15 +446,15 @@ class _SubscriptionScreenState extends State<SubscriptionScreen> {
               ),
               if (isCurrent)
                 Container(
-                  padding: EdgeInsets.symmetric(horizontal: 2.w, vertical: 0.5.h),
+                  padding:
+                      EdgeInsets.symmetric(horizontal: 2.w, vertical: 0.5.h),
                   decoration: BoxDecoration(
                     color: const Color(0xFF4CAF50).withOpacity(0.1),
                     borderRadius: BorderRadius.circular(12),
                   ),
                   child: Text(
-                    'Mevcut',
-                    style: GoogleFonts.poppins(
-                      fontSize: 10.sp,
+                    'Current',
+                    style: theme.textTheme.labelSmall?.copyWith(
                       fontWeight: FontWeight.w600,
                       color: const Color(0xFF4CAF50),
                     ),
@@ -506,76 +475,72 @@ class _SubscriptionScreenState extends State<SubscriptionScreen> {
           ),
           SizedBox(height: 2.h),
           Text(
-            'Özellikler:',
-            style: GoogleFonts.poppins(
-              fontSize: 14.sp,
+            'Features:',
+            style: theme.textTheme.titleMedium?.copyWith(
               fontWeight: FontWeight.w600,
               color: const Color(0xFF333333),
             ),
           ),
           SizedBox(height: 1.h),
           ...plan.features.map((feature) => Padding(
-            padding: EdgeInsets.only(bottom: 0.5.h),
-            child: Row(
-              children: [
-                Icon(
-                  Icons.check_circle,
-                  color: const Color(0xFF4CAF50),
-                  size: 16.sp,
-                ),
-                SizedBox(width: 2.w),
-                Expanded(
-                  child: Text(
-                    feature,
-                    style: GoogleFonts.poppins(
-                      fontSize: 12.sp,
-                      color: const Color(0xFF666666),
+                padding: EdgeInsets.only(bottom: 0.5.h),
+                child: Row(
+                  children: [
+                    Icon(
+                      Icons.check_circle,
+                      color: const Color(0xFF4CAF50),
+                      size: 16.sp,
                     ),
-                  ),
+                    SizedBox(width: 2.w),
+                    Expanded(
+                      child: Text(
+                        feature,
+                        style: theme.textTheme.bodyMedium?.copyWith(
+                          color: const Color(0xFF666666),
+                        ),
+                      ),
+                    ),
+                  ],
                 ),
-              ],
-            ),
-          )),
+              )),
           if (plan.limitations.isNotEmpty) ...[
             SizedBox(height: 1.h),
             Text(
-              'Sınırlamalar:',
-              style: GoogleFonts.poppins(
-                fontSize: 14.sp,
+              'Limitations:',
+              style: theme.textTheme.titleMedium?.copyWith(
                 fontWeight: FontWeight.w600,
                 color: const Color(0xFFD67B7B),
               ),
             ),
             SizedBox(height: 1.h),
             ...plan.limitations.map((limitation) => Padding(
-              padding: EdgeInsets.only(bottom: 0.5.h),
-              child: Row(
-                children: [
-                  Icon(
-                    Icons.cancel,
-                    color: const Color(0xFFD67B7B),
-                    size: 16.sp,
-                  ),
-                  SizedBox(width: 2.w),
-                  Expanded(
-                    child: Text(
-                      limitation,
-                      style: GoogleFonts.poppins(
-                        fontSize: 12.sp,
-                        color: const Color(0xFF666666),
+                  padding: EdgeInsets.only(bottom: 0.5.h),
+                  child: Row(
+                    children: [
+                      Icon(
+                        Icons.cancel,
+                        color: const Color(0xFFD67B7B),
+                        size: 16.sp,
                       ),
-                    ),
+                      SizedBox(width: 2.w),
+                      Expanded(
+                        child: Text(
+                          limitation,
+                          style: theme.textTheme.bodyMedium?.copyWith(
+                            color: const Color(0xFF666666),
+                          ),
+                        ),
+                      ),
+                    ],
                   ),
-                ],
-              ),
-            )),
+                )),
           ],
         ],
       ),
     );
   }
 
-  Widget _buildVoucherSection() {
+  Widget _buildVoucherSection(ThemeData theme) {
     return Container(
       padding: EdgeInsets.all(4.w),
       decoration: BoxDecoration(
@@ -593,9 +558,8 @@ class _SubscriptionScreenState extends State<SubscriptionScreen> {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(
-            'Promosyon Kodu',
-            style: GoogleFonts.poppins(
-              fontSize: 16.sp,
+            'Promo Code',
+            style: theme.textTheme.titleMedium?.copyWith(
               fontWeight: FontWeight.w600,
               color: const Color(0xFF333333),
             ),
@@ -606,7 +570,7 @@ class _SubscriptionScreenState extends State<SubscriptionScreen> {
               Expanded(
                 child: TextField(
                   decoration: InputDecoration(
-                    hintText: 'Promosyon kodunuzu girin',
+                    hintText: 'Enter promo code',
                     border: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(8),
                     ),
@@ -635,8 +599,8 @@ class _SubscriptionScreenState extends State<SubscriptionScreen> {
                   ),
                 ),
                 child: Text(
-                  'Uygula',
-                  style: GoogleFonts.poppins(
+                  'Apply',
+                  style: theme.textTheme.bodyMedium?.copyWith(
                     color: Colors.white,
                     fontWeight: FontWeight.w600,
                   ),
@@ -662,9 +626,8 @@ class _SubscriptionScreenState extends State<SubscriptionScreen> {
                   SizedBox(width: 2.w),
                   Expanded(
                     child: Text(
-                      'Promosyon kodu geçerli!',
-                      style: GoogleFonts.poppins(
-                        fontSize: 12.sp,
+                      'Promo code applied!',
+                      style: theme.textTheme.bodyMedium?.copyWith(
                         fontWeight: FontWeight.w600,
                         color: const Color(0xFF4CAF50),
                       ),
@@ -679,7 +642,7 @@ class _SubscriptionScreenState extends State<SubscriptionScreen> {
     );
   }
 
-  Widget _buildPricingBreakdown() {
+  Widget _buildPricingBreakdown(ThemeData theme) {
     double basePrice = _currentPlan?.price ?? 0.0;
     double totalPrice = basePrice * _children.length;
     double discount = 0.0;
@@ -709,27 +672,32 @@ class _SubscriptionScreenState extends State<SubscriptionScreen> {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(
-            'Fiyat Detayı',
-            style: GoogleFonts.poppins(
-              fontSize: 16.sp,
+            'Price Breakdown',
+            style: theme.textTheme.titleMedium?.copyWith(
               fontWeight: FontWeight.w600,
               color: const Color(0xFF333333),
             ),
           ),
           SizedBox(height: 2.h),
-          _buildPricingRow('Temel Fiyat', '\$${basePrice.toStringAsFixed(2)}'),
-          _buildPricingRow('Çocuk Sayısı', '${_children.length}'),
-          _buildPricingRow('Ara Toplam', '\$${totalPrice.toStringAsFixed(2)}'),
+          _buildPricingRow(
+              theme, 'Base Price', '\$${basePrice.toStringAsFixed(2)}'),
+          _buildPricingRow(theme, 'Number of Children', '${_children.length}'),
+          _buildPricingRow(
+              theme, 'Subtotal', '\$${totalPrice.toStringAsFixed(2)}'),
           if (discount > 0)
-            _buildPricingRow('İndirim', '-\$${discount.toStringAsFixed(2)}', isDiscount: true),
+            _buildPricingRow(
+                theme, 'Discount', '-\$${discount.toStringAsFixed(2)}',
+                isDiscount: true),
           Divider(height: 2.h),
-          _buildPricingRow('Toplam', '\$${finalPrice.toStringAsFixed(2)}', isTotal: true),
+          _buildPricingRow(theme, 'Total', '\$${finalPrice.toStringAsFixed(2)}',
+              isTotal: true),
         ],
       ),
     );
   }
 
-  Widget _buildPricingRow(String label, String value, {bool isDiscount = false, bool isTotal = false}) {
+  Widget _buildPricingRow(ThemeData theme, String label, String value,
+      {bool isDiscount = false, bool isTotal = false}) {
     return Padding(
       padding: EdgeInsets.symmetric(vertical: 0.5.h),
       child: Row(
@@ -737,7 +705,7 @@ class _SubscriptionScreenState extends State<SubscriptionScreen> {
         children: [
           Text(
             label,
-            style: GoogleFonts.poppins(
+            style: theme.textTheme.bodyMedium?.copyWith(
               fontSize: isTotal ? 16.sp : 14.sp,
               fontWeight: isTotal ? FontWeight.w600 : FontWeight.normal,
               color: const Color(0xFF333333),
@@ -745,10 +713,12 @@ class _SubscriptionScreenState extends State<SubscriptionScreen> {
           ),
           Text(
             value,
-            style: GoogleFonts.poppins(
+            style: theme.textTheme.bodyMedium?.copyWith(
               fontSize: isTotal ? 16.sp : 14.sp,
               fontWeight: isTotal ? FontWeight.w600 : FontWeight.normal,
-              color: isDiscount ? const Color(0xFF4CAF50) : const Color(0xFF6C63FF),
+              color: isDiscount
+                  ? const Color(0xFF4CAF50)
+                  : const Color(0xFF6C63FF),
             ),
           ),
         ],
@@ -756,7 +726,7 @@ class _SubscriptionScreenState extends State<SubscriptionScreen> {
     );
   }
 
-  Widget _buildActionButtons() {
+  Widget _buildActionButtons(ThemeData theme) {
     return Column(
       children: [
         SizedBox(
@@ -771,8 +741,8 @@ class _SubscriptionScreenState extends State<SubscriptionScreen> {
               ),
             ),
             child: Text(
-              'Planı Yükselt',
-              style: GoogleFonts.poppins(
+              'Upgrade Plan',
+              style: theme.textTheme.bodyMedium?.copyWith(
                 fontSize: 16.sp,
                 fontWeight: FontWeight.w600,
                 color: Colors.white,
@@ -793,8 +763,8 @@ class _SubscriptionScreenState extends State<SubscriptionScreen> {
               ),
             ),
             child: Text(
-              'Üyeliği İptal Et',
-              style: GoogleFonts.poppins(
+              'Cancel Subscription',
+              style: theme.textTheme.bodyMedium?.copyWith(
                 fontSize: 16.sp,
                 fontWeight: FontWeight.w600,
                 color: const Color(0xFFD67B7B),
@@ -814,10 +784,8 @@ class _SubscriptionScreenState extends State<SubscriptionScreen> {
       });
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text(
-            'Promosyon kodu uygulandı!',
-            style: GoogleFonts.poppins(),
-          ),
+          content: Text('Promo code applied!',
+              style: Theme.of(context).textTheme.bodyMedium),
           backgroundColor: const Color(0xFF4CAF50),
         ),
       );
@@ -825,25 +793,21 @@ class _SubscriptionScreenState extends State<SubscriptionScreen> {
   }
 
   void _upgradePlan() {
-    // Plan upgrade logic
+    final theme = Theme.of(context);
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
-        title: Text(
-          'Plan Yükseltme',
-          style: GoogleFonts.poppins(fontWeight: FontWeight.bold),
-        ),
-        content: Text(
-          'Planınızı yükseltmek istediğinizden emin misiniz?',
-          style: GoogleFonts.poppins(),
-        ),
+        title: Text('Upgrade Plan',
+            style: theme.textTheme.titleMedium
+                ?.copyWith(fontWeight: FontWeight.bold)),
+        content: Text('Are you sure you want to upgrade your plan?',
+            style: theme.textTheme.bodyMedium),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context),
-            child: Text(
-              'İptal',
-              style: GoogleFonts.poppins(color: const Color(0xFF666666)),
-            ),
+            child: Text('Cancel',
+                style: theme.textTheme.bodyMedium?.copyWith(
+                    color: theme.colorScheme.onSurface.withOpacity(0.7))),
           ),
           ElevatedButton(
             onPressed: () {
@@ -853,10 +817,9 @@ class _SubscriptionScreenState extends State<SubscriptionScreen> {
             style: ElevatedButton.styleFrom(
               backgroundColor: const Color(0xFF6C63FF),
             ),
-            child: Text(
-              'Yükselt',
-              style: GoogleFonts.poppins(color: Colors.white),
-            ),
+            child: Text('Upgrade',
+                style:
+                    theme.textTheme.bodyMedium?.copyWith(color: Colors.white)),
           ),
         ],
       ),
@@ -864,24 +827,21 @@ class _SubscriptionScreenState extends State<SubscriptionScreen> {
   }
 
   void _cancelSubscription() {
+    final theme = Theme.of(context);
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
-        title: Text(
-          'Üyelik İptali',
-          style: GoogleFonts.poppins(fontWeight: FontWeight.bold),
-        ),
-        content: Text(
-          'Üyeliğinizi iptal etmek istediğinizden emin misiniz?',
-          style: GoogleFonts.poppins(),
-        ),
+        title: Text('Cancel Subscription',
+            style: theme.textTheme.titleMedium
+                ?.copyWith(fontWeight: FontWeight.bold)),
+        content: Text('Are you sure you want to cancel your subscription?',
+            style: theme.textTheme.bodyMedium),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context),
-            child: Text(
-              'İptal',
-              style: GoogleFonts.poppins(color: const Color(0xFF666666)),
-            ),
+            child: Text('Cancel',
+                style: theme.textTheme.bodyMedium?.copyWith(
+                    color: theme.colorScheme.onSurface.withOpacity(0.7))),
           ),
           ElevatedButton(
             onPressed: () {
@@ -891,10 +851,9 @@ class _SubscriptionScreenState extends State<SubscriptionScreen> {
             style: ElevatedButton.styleFrom(
               backgroundColor: const Color(0xFFD67B7B),
             ),
-            child: Text(
-              'İptal Et',
-              style: GoogleFonts.poppins(color: Colors.white),
-            ),
+            child: Text('Cancel',
+                style:
+                    theme.textTheme.bodyMedium?.copyWith(color: Colors.white)),
           ),
         ],
       ),

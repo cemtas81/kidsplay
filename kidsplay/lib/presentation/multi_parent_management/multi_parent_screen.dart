@@ -1,7 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:sizer/sizer.dart';
-import 'package:google_fonts/google_fonts.dart';
-import 'package:flutter_svg/flutter_svg.dart';
 import '../../widgets/custom_app_bar.dart';
 
 class MultiParentScreen extends StatefulWidget {
@@ -38,7 +36,7 @@ class _MultiParentScreenState extends State<MultiParentScreen>
         id: '1',
         name: 'Ayşe Yılmaz',
         email: 'ayse@example.com',
-        relationship: 'Anne',
+        relationship: 'Mother',
         profileImageUrl: 'https://example.com/ayse.jpg',
         isPrimary: true,
         permissions: ['view', 'edit', 'invite', 'delete'],
@@ -48,7 +46,7 @@ class _MultiParentScreenState extends State<MultiParentScreen>
         id: '2',
         name: 'Mehmet Yılmaz',
         email: 'mehmet@example.com',
-        relationship: 'Baba',
+        relationship: 'Father',
         profileImageUrl: 'https://example.com/mehmet.jpg',
         isPrimary: false,
         permissions: ['view', 'edit'],
@@ -80,7 +78,7 @@ class _MultiParentScreenState extends State<MultiParentScreen>
     _pendingInvitations = [
       Invitation(
         id: '1',
-        email: 'anneanne@example.com',
+        email: 'grandma@example.com',
         invitedBy: 'Ayşe Yılmaz',
         childName: 'Elif Yılmaz',
         permissions: ['view', 'progress'],
@@ -92,37 +90,38 @@ class _MultiParentScreenState extends State<MultiParentScreen>
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
     return Scaffold(
-      backgroundColor: const Color(0xFFF8F9FA),
+      backgroundColor: theme.colorScheme.background,
       appBar: CustomAppBar(
-        title: 'Çoklu Ebeveyn Yönetimi',
+        title: 'Multi-Parent Management',
         automaticallyImplyLeading: true,
         onBackPressed: () => Navigator.pop(context),
       ),
       body: Column(
         children: [
-          _buildTabBar(),
+          _buildTabBar(theme),
           Expanded(
             child: TabBarView(
               controller: _tabController,
               children: [
-                _buildParentsTab(),
-                _buildSharedChildrenTab(),
-                _buildInvitationsTab(),
+                _buildParentsTab(theme),
+                _buildSharedChildrenTab(theme),
+                _buildInvitationsTab(theme),
               ],
             ),
           ),
         ],
       ),
-      floatingActionButton: _buildFloatingActionButton(),
+      floatingActionButton: _buildFloatingActionButton(theme),
     );
   }
 
-  Widget _buildTabBar() {
+  Widget _buildTabBar(ThemeData theme) {
     return Container(
       margin: EdgeInsets.symmetric(horizontal: 4.w, vertical: 2.h),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: theme.colorScheme.surface,
         borderRadius: BorderRadius.circular(12),
         boxShadow: [
           BoxShadow(
@@ -134,61 +133,53 @@ class _MultiParentScreenState extends State<MultiParentScreen>
       ),
       child: TabBar(
         controller: _tabController,
-        labelColor: const Color(0xFF6C63FF),
-        unselectedLabelColor: const Color(0xFF999999),
-        indicatorColor: const Color(0xFF6C63FF),
+        labelColor: theme.colorScheme.primary,
+        unselectedLabelColor: theme.colorScheme.onSurface.withOpacity(0.6),
+        indicatorColor: theme.colorScheme.primary,
         indicatorWeight: 3,
-        labelStyle: GoogleFonts.poppins(
-          fontSize: 14.sp,
-          fontWeight: FontWeight.w600,
-        ),
-        unselectedLabelStyle: GoogleFonts.poppins(
-          fontSize: 14.sp,
-          fontWeight: FontWeight.w500,
-        ),
+        labelStyle:
+            theme.textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w600),
+        unselectedLabelStyle: theme.textTheme.titleMedium,
         tabs: const [
-          Tab(text: 'Ebeveynler'),
-          Tab(text: 'Paylaşılan Çocuklar'),
-          Tab(text: 'Davetler'),
+          Tab(text: 'Parents'),
+          Tab(text: 'Shared Children'),
+          Tab(text: 'Invitations'),
         ],
       ),
     );
   }
 
-  Widget _buildFloatingActionButton() {
+  Widget _buildFloatingActionButton(ThemeData theme) {
     if (_tabController.index == 0) {
       return FloatingActionButton.extended(
         onPressed: _showInviteParentDialog,
-        backgroundColor: const Color(0xFF6C63FF),
+        backgroundColor: theme.colorScheme.primary,
         icon: const Icon(Icons.person_add, color: Colors.white),
         label: Text(
-          'Ebeveyn Davet Et',
-          style: GoogleFonts.poppins(
-            color: Colors.white,
-            fontWeight: FontWeight.w600,
-          ),
+          'Invite Parent',
+          style: theme.textTheme.labelLarge?.copyWith(color: Colors.white),
         ),
       );
     }
     return const SizedBox.shrink();
   }
 
-  Widget _buildParentsTab() {
+  Widget _buildParentsTab(ThemeData theme) {
     return ListView.builder(
       padding: EdgeInsets.all(4.w),
       itemCount: _parents.length,
       itemBuilder: (context, index) {
-        return _buildParentCard(_parents[index]);
+        return _buildParentCard(theme, _parents[index]);
       },
     );
   }
 
-  Widget _buildParentCard(Parent parent) {
+  Widget _buildParentCard(ThemeData theme, Parent parent) {
     return Container(
       margin: EdgeInsets.only(bottom: 2.h),
       padding: EdgeInsets.all(4.w),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: theme.colorScheme.surface,
         borderRadius: BorderRadius.circular(12),
         boxShadow: [
           BoxShadow(
@@ -205,15 +196,16 @@ class _MultiParentScreenState extends State<MultiParentScreen>
             children: [
               CircleAvatar(
                 radius: 8.w,
-                backgroundImage: NetworkImage(parent.profileImageUrl),
-                backgroundColor: const Color(0xFF6C63FF).withOpacity(0.1),
+                backgroundImage: parent.profileImageUrl.isNotEmpty
+                    ? NetworkImage(parent.profileImageUrl)
+                    : null,
+                backgroundColor: theme.colorScheme.primary.withOpacity(0.1),
                 child: parent.profileImageUrl.isEmpty
                     ? Text(
                         parent.name[0],
-                        style: GoogleFonts.poppins(
-                          fontSize: 18.sp,
+                        style: theme.textTheme.titleLarge?.copyWith(
                           fontWeight: FontWeight.bold,
-                          color: const Color(0xFF6C63FF),
+                          color: theme.colorScheme.primary,
                         ),
                       )
                     : null,
@@ -227,26 +219,25 @@ class _MultiParentScreenState extends State<MultiParentScreen>
                       children: [
                         Text(
                           parent.name,
-                          style: GoogleFonts.poppins(
-                            fontSize: 16.sp,
+                          style: theme.textTheme.titleMedium?.copyWith(
                             fontWeight: FontWeight.w600,
-                            color: const Color(0xFF333333),
+                            color: theme.colorScheme.onSurface,
                           ),
                         ),
                         if (parent.isPrimary) ...[
                           SizedBox(width: 2.w),
                           Container(
-                            padding: EdgeInsets.symmetric(horizontal: 2.w, vertical: 0.5.h),
+                            padding: EdgeInsets.symmetric(
+                                horizontal: 2.w, vertical: 0.5.h),
                             decoration: BoxDecoration(
-                              color: const Color(0xFF4CAF50).withOpacity(0.1),
+                              color: Colors.green.withOpacity(0.1),
                               borderRadius: BorderRadius.circular(12),
                             ),
                             child: Text(
-                              'Birincil',
-                              style: GoogleFonts.poppins(
-                                fontSize: 10.sp,
+                              'Primary',
+                              style: theme.textTheme.labelSmall?.copyWith(
                                 fontWeight: FontWeight.w600,
-                                color: const Color(0xFF4CAF50),
+                                color: Colors.green,
                               ),
                             ),
                           ),
@@ -255,16 +246,14 @@ class _MultiParentScreenState extends State<MultiParentScreen>
                     ),
                     Text(
                       parent.email,
-                      style: GoogleFonts.poppins(
-                        fontSize: 14.sp,
-                        color: const Color(0xFF666666),
+                      style: theme.textTheme.bodyMedium?.copyWith(
+                        color: theme.colorScheme.onSurface.withOpacity(0.7),
                       ),
                     ),
                     Text(
                       parent.relationship,
-                      style: GoogleFonts.poppins(
-                        fontSize: 12.sp,
-                        color: const Color(0xFF999999),
+                      style: theme.textTheme.bodySmall?.copyWith(
+                        color: theme.colorScheme.onSurface.withOpacity(0.5),
                       ),
                     ),
                   ],
@@ -280,7 +269,7 @@ class _MultiParentScreenState extends State<MultiParentScreen>
                         children: [
                           Icon(Icons.edit, color: Color(0xFF6C63FF)),
                           SizedBox(width: 8),
-                          Text('Düzenle'),
+                          Text('Edit'),
                         ],
                       ),
                     ),
@@ -290,7 +279,7 @@ class _MultiParentScreenState extends State<MultiParentScreen>
                         children: [
                           Icon(Icons.security, color: Color(0xFF6C63FF)),
                           SizedBox(width: 8),
-                          Text('İzinler'),
+                          Text('Permissions'),
                         ],
                       ),
                     ),
@@ -300,14 +289,14 @@ class _MultiParentScreenState extends State<MultiParentScreen>
                         children: [
                           Icon(Icons.person_remove, color: Color(0xFFD67B7B)),
                           SizedBox(width: 8),
-                          Text('Kaldır'),
+                          Text('Remove'),
                         ],
                       ),
                     ),
                   ],
                   child: Icon(
                     Icons.more_vert,
-                    color: const Color(0xFF666666),
+                    color: theme.colorScheme.onSurface.withOpacity(0.7),
                     size: 20.sp,
                   ),
                 ),
@@ -315,11 +304,10 @@ class _MultiParentScreenState extends State<MultiParentScreen>
           ),
           SizedBox(height: 2.h),
           Text(
-            'İzinler',
-            style: GoogleFonts.poppins(
-              fontSize: 14.sp,
+            'Permissions',
+            style: theme.textTheme.titleMedium?.copyWith(
               fontWeight: FontWeight.w600,
-              color: const Color(0xFF333333),
+              color: theme.colorScheme.onSurface,
             ),
           ),
           SizedBox(height: 1.h),
@@ -330,15 +318,14 @@ class _MultiParentScreenState extends State<MultiParentScreen>
               return Container(
                 padding: EdgeInsets.symmetric(horizontal: 2.w, vertical: 0.5.h),
                 decoration: BoxDecoration(
-                  color: const Color(0xFF6C63FF).withOpacity(0.1),
+                  color: theme.colorScheme.primary.withOpacity(0.1),
                   borderRadius: BorderRadius.circular(12),
                 ),
                 child: Text(
                   _getPermissionText(permission),
-                  style: GoogleFonts.poppins(
-                    fontSize: 10.sp,
+                  style: theme.textTheme.labelSmall?.copyWith(
                     fontWeight: FontWeight.w600,
-                    color: const Color(0xFF6C63FF),
+                    color: theme.colorScheme.primary,
                   ),
                 ),
               );
@@ -346,10 +333,9 @@ class _MultiParentScreenState extends State<MultiParentScreen>
           ),
           SizedBox(height: 1.h),
           Text(
-            'Katılım: ${_formatDate(parent.joinedAt)}',
-            style: GoogleFonts.poppins(
-              fontSize: 12.sp,
-              color: const Color(0xFF999999),
+            'Joined: ${_formatDate(parent.joinedAt)}',
+            style: theme.textTheme.bodySmall?.copyWith(
+              color: theme.colorScheme.onSurface.withOpacity(0.5),
             ),
           ),
         ],
@@ -357,22 +343,22 @@ class _MultiParentScreenState extends State<MultiParentScreen>
     );
   }
 
-  Widget _buildSharedChildrenTab() {
+  Widget _buildSharedChildrenTab(ThemeData theme) {
     return ListView.builder(
       padding: EdgeInsets.all(4.w),
       itemCount: _sharedChildren.length,
       itemBuilder: (context, index) {
-        return _buildSharedChildCard(_sharedChildren[index]);
+        return _buildSharedChildCard(theme, _sharedChildren[index]);
       },
     );
   }
 
-  Widget _buildSharedChildCard(SharedChild sharedChild) {
+  Widget _buildSharedChildCard(ThemeData theme, SharedChild sharedChild) {
     return Container(
       margin: EdgeInsets.only(bottom: 2.h),
       padding: EdgeInsets.all(4.w),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: theme.colorScheme.surface,
         borderRadius: BorderRadius.circular(12),
         boxShadow: [
           BoxShadow(
@@ -389,13 +375,12 @@ class _MultiParentScreenState extends State<MultiParentScreen>
             children: [
               CircleAvatar(
                 radius: 8.w,
-                backgroundColor: const Color(0xFF6C63FF).withOpacity(0.1),
+                backgroundColor: theme.colorScheme.primary.withOpacity(0.1),
                 child: Text(
                   sharedChild.childName[0],
-                  style: GoogleFonts.poppins(
-                    fontSize: 18.sp,
+                  style: theme.textTheme.titleLarge?.copyWith(
                     fontWeight: FontWeight.bold,
-                    color: const Color(0xFF6C63FF),
+                    color: theme.colorScheme.primary,
                   ),
                 ),
               ),
@@ -406,31 +391,29 @@ class _MultiParentScreenState extends State<MultiParentScreen>
                   children: [
                     Text(
                       sharedChild.childName,
-                      style: GoogleFonts.poppins(
-                        fontSize: 16.sp,
+                      style: theme.textTheme.titleMedium?.copyWith(
                         fontWeight: FontWeight.w600,
-                        color: const Color(0xFF333333),
+                        color: theme.colorScheme.onSurface,
                       ),
                     ),
                     Text(
-                      '${sharedChild.childAge} yaşında',
-                      style: GoogleFonts.poppins(
-                        fontSize: 14.sp,
-                        color: const Color(0xFF666666),
+                      '${sharedChild.childAge} years old',
+                      style: theme.textTheme.bodyMedium?.copyWith(
+                        color: theme.colorScheme.onSurface.withOpacity(0.7),
                       ),
                     ),
                     Text(
-                      '${sharedChild.parentIds.length} ebeveyn paylaşıyor',
-                      style: GoogleFonts.poppins(
-                        fontSize: 12.sp,
-                        color: const Color(0xFF999999),
+                      'Shared by ${sharedChild.parentIds.length} parents',
+                      style: theme.textTheme.bodySmall?.copyWith(
+                        color: theme.colorScheme.onSurface.withOpacity(0.5),
                       ),
                     ),
                   ],
                 ),
               ),
               PopupMenuButton<String>(
-                onSelected: (value) => _handleSharedChildAction(value, sharedChild),
+                onSelected: (value) =>
+                    _handleSharedChildAction(value, sharedChild),
                 itemBuilder: (context) => [
                   const PopupMenuItem(
                     value: 'view_progress',
@@ -438,7 +421,7 @@ class _MultiParentScreenState extends State<MultiParentScreen>
                       children: [
                         Icon(Icons.trending_up, color: Color(0xFF6C63FF)),
                         SizedBox(width: 8),
-                        Text('İlerlemeyi Görüntüle'),
+                        Text('View Progress'),
                       ],
                     ),
                   ),
@@ -448,24 +431,24 @@ class _MultiParentScreenState extends State<MultiParentScreen>
                       children: [
                         Icon(Icons.security, color: Color(0xFF6C63FF)),
                         SizedBox(width: 8),
-                        Text('İzinleri Yönet'),
+                        Text('Manage Permissions'),
                       ],
                     ),
                   ),
-                                       PopupMenuItem(
-                       value: 'remove_sharing',
-                       child: Row(
-                         children: [
-                           Icon(Icons.share, color: const Color(0xFFD67B7B)),
-                           const SizedBox(width: 8),
-                           const Text('Paylaşımı Kaldır'),
-                         ],
-                       ),
-                     ),
+                  PopupMenuItem(
+                    value: 'remove_sharing',
+                    child: Row(
+                      children: [
+                        Icon(Icons.share, color: Color(0xFFD67B7B)),
+                        SizedBox(width: 8),
+                        Text('Remove Sharing'),
+                      ],
+                    ),
+                  ),
                 ],
                 child: Icon(
                   Icons.more_vert,
-                  color: const Color(0xFF666666),
+                  color: theme.colorScheme.onSurface.withOpacity(0.7),
                   size: 20.sp,
                 ),
               ),
@@ -473,11 +456,10 @@ class _MultiParentScreenState extends State<MultiParentScreen>
           ),
           SizedBox(height: 2.h),
           Text(
-            'Paylaşım İzinleri',
-            style: GoogleFonts.poppins(
-              fontSize: 14.sp,
+            'Sharing Permissions',
+            style: theme.textTheme.titleMedium?.copyWith(
               fontWeight: FontWeight.w600,
-              color: const Color(0xFF333333),
+              color: theme.colorScheme.onSurface,
             ),
           ),
           SizedBox(height: 1.h),
@@ -488,15 +470,14 @@ class _MultiParentScreenState extends State<MultiParentScreen>
               return Container(
                 padding: EdgeInsets.symmetric(horizontal: 2.w, vertical: 0.5.h),
                 decoration: BoxDecoration(
-                  color: const Color(0xFF4CAF50).withOpacity(0.1),
+                  color: Colors.green.withOpacity(0.1),
                   borderRadius: BorderRadius.circular(12),
                 ),
                 child: Text(
                   _getPermissionText(permission),
-                  style: GoogleFonts.poppins(
-                    fontSize: 10.sp,
+                  style: theme.textTheme.labelSmall?.copyWith(
                     fontWeight: FontWeight.w600,
-                    color: const Color(0xFF4CAF50),
+                    color: Colors.green,
                   ),
                 ),
               );
@@ -504,10 +485,9 @@ class _MultiParentScreenState extends State<MultiParentScreen>
           ),
           SizedBox(height: 1.h),
           Text(
-            'Paylaşım: ${_formatDate(sharedChild.sharedAt)}',
-            style: GoogleFonts.poppins(
-              fontSize: 12.sp,
-              color: const Color(0xFF999999),
+            'Shared: ${_formatDate(sharedChild.sharedAt)}',
+            style: theme.textTheme.bodySmall?.copyWith(
+              color: theme.colorScheme.onSurface.withOpacity(0.5),
             ),
           ),
         ],
@@ -515,7 +495,7 @@ class _MultiParentScreenState extends State<MultiParentScreen>
     );
   }
 
-  Widget _buildInvitationsTab() {
+  Widget _buildInvitationsTab(ThemeData theme) {
     if (_pendingInvitations.isEmpty) {
       return Center(
         child: Column(
@@ -524,23 +504,21 @@ class _MultiParentScreenState extends State<MultiParentScreen>
             Icon(
               Icons.email_outlined,
               size: 64.sp,
-              color: const Color(0xFFCCCCCC),
+              color: theme.colorScheme.onSurface.withOpacity(0.2),
             ),
             SizedBox(height: 2.h),
             Text(
-              'Bekleyen davet yok',
-              style: GoogleFonts.poppins(
-                fontSize: 16.sp,
+              'No pending invitations',
+              style: theme.textTheme.titleMedium?.copyWith(
                 fontWeight: FontWeight.w600,
-                color: const Color(0xFF999999),
+                color: theme.colorScheme.onSurface.withOpacity(0.5),
               ),
             ),
             SizedBox(height: 1.h),
             Text(
-              'Yeni ebeveyn davet etmek için\n"Ebeveyn Davet Et" butonunu kullanın',
-              style: GoogleFonts.poppins(
-                fontSize: 14.sp,
-                color: const Color(0xFF999999),
+              'Use the "Invite Parent" button to send a new invitation',
+              style: theme.textTheme.bodyMedium?.copyWith(
+                color: theme.colorScheme.onSurface.withOpacity(0.5),
               ),
               textAlign: TextAlign.center,
             ),
@@ -553,12 +531,12 @@ class _MultiParentScreenState extends State<MultiParentScreen>
       padding: EdgeInsets.all(4.w),
       itemCount: _pendingInvitations.length,
       itemBuilder: (context, index) {
-        return _buildInvitationCard(_pendingInvitations[index]);
+        return _buildInvitationCard(theme, _pendingInvitations[index]);
       },
     );
   }
 
-  Widget _buildInvitationCard(Invitation invitation) {
+  Widget _buildInvitationCard(ThemeData theme, Invitation invitation) {
     final daysLeft = invitation.expiresAt.difference(DateTime.now()).inDays;
     final isExpired = daysLeft < 0;
 
@@ -566,7 +544,7 @@ class _MultiParentScreenState extends State<MultiParentScreen>
       margin: EdgeInsets.only(bottom: 2.h),
       padding: EdgeInsets.all(4.w),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: theme.colorScheme.surface,
         borderRadius: BorderRadius.circular(12),
         boxShadow: [
           BoxShadow(
@@ -583,10 +561,10 @@ class _MultiParentScreenState extends State<MultiParentScreen>
             children: [
               CircleAvatar(
                 radius: 8.w,
-                backgroundColor: const Color(0xFF6C63FF).withOpacity(0.1),
+                backgroundColor: theme.colorScheme.primary.withOpacity(0.1),
                 child: Icon(
                   Icons.email,
-                  color: const Color(0xFF6C63FF),
+                  color: theme.colorScheme.primary,
                   size: 20.sp,
                 ),
               ),
@@ -597,24 +575,21 @@ class _MultiParentScreenState extends State<MultiParentScreen>
                   children: [
                     Text(
                       invitation.email,
-                      style: GoogleFonts.poppins(
-                        fontSize: 16.sp,
+                      style: theme.textTheme.titleMedium?.copyWith(
                         fontWeight: FontWeight.w600,
-                        color: const Color(0xFF333333),
+                        color: theme.colorScheme.onSurface,
                       ),
                     ),
                     Text(
-                      'Davet eden: ${invitation.invitedBy}',
-                      style: GoogleFonts.poppins(
-                        fontSize: 14.sp,
-                        color: const Color(0xFF666666),
+                      'Invited by: ${invitation.invitedBy}',
+                      style: theme.textTheme.bodyMedium?.copyWith(
+                        color: theme.colorScheme.onSurface.withOpacity(0.7),
                       ),
                     ),
                     Text(
-                      'Çocuk: ${invitation.childName}',
-                      style: GoogleFonts.poppins(
-                        fontSize: 12.sp,
-                        color: const Color(0xFF999999),
+                      'Child: ${invitation.childName}',
+                      style: theme.textTheme.bodySmall?.copyWith(
+                        color: theme.colorScheme.onSurface.withOpacity(0.5),
                       ),
                     ),
                   ],
@@ -622,15 +597,15 @@ class _MultiParentScreenState extends State<MultiParentScreen>
               ),
               if (isExpired)
                 Container(
-                  padding: EdgeInsets.symmetric(horizontal: 2.w, vertical: 0.5.h),
+                  padding:
+                      EdgeInsets.symmetric(horizontal: 2.w, vertical: 0.5.h),
                   decoration: BoxDecoration(
                     color: const Color(0xFFD67B7B).withOpacity(0.1),
                     borderRadius: BorderRadius.circular(12),
                   ),
                   child: Text(
-                    'Süresi Doldu',
-                    style: GoogleFonts.poppins(
-                      fontSize: 10.sp,
+                    'Expired',
+                    style: theme.textTheme.labelSmall?.copyWith(
                       fontWeight: FontWeight.w600,
                       color: const Color(0xFFD67B7B),
                     ),
@@ -638,15 +613,15 @@ class _MultiParentScreenState extends State<MultiParentScreen>
                 )
               else
                 Container(
-                  padding: EdgeInsets.symmetric(horizontal: 2.w, vertical: 0.5.h),
+                  padding:
+                      EdgeInsets.symmetric(horizontal: 2.w, vertical: 0.5.h),
                   decoration: BoxDecoration(
                     color: const Color(0xFFFF9800).withOpacity(0.1),
                     borderRadius: BorderRadius.circular(12),
                   ),
                   child: Text(
-                    '$daysLeft gün kaldı',
-                    style: GoogleFonts.poppins(
-                      fontSize: 10.sp,
+                    '$daysLeft days left',
+                    style: theme.textTheme.labelSmall?.copyWith(
                       fontWeight: FontWeight.w600,
                       color: const Color(0xFFFF9800),
                     ),
@@ -656,11 +631,10 @@ class _MultiParentScreenState extends State<MultiParentScreen>
           ),
           SizedBox(height: 2.h),
           Text(
-            'İzinler',
-            style: GoogleFonts.poppins(
-              fontSize: 14.sp,
+            'Permissions',
+            style: theme.textTheme.titleMedium?.copyWith(
               fontWeight: FontWeight.w600,
-              color: const Color(0xFF333333),
+              color: theme.colorScheme.onSurface,
             ),
           ),
           SizedBox(height: 1.h),
@@ -671,15 +645,14 @@ class _MultiParentScreenState extends State<MultiParentScreen>
               return Container(
                 padding: EdgeInsets.symmetric(horizontal: 2.w, vertical: 0.5.h),
                 decoration: BoxDecoration(
-                  color: const Color(0xFF6C63FF).withOpacity(0.1),
+                  color: theme.colorScheme.primary.withOpacity(0.1),
                   borderRadius: BorderRadius.circular(12),
                 ),
                 child: Text(
                   _getPermissionText(permission),
-                  style: GoogleFonts.poppins(
-                    fontSize: 10.sp,
+                  style: theme.textTheme.labelSmall?.copyWith(
                     fontWeight: FontWeight.w600,
-                    color: const Color(0xFF6C63FF),
+                    color: theme.colorScheme.primary,
                   ),
                 ),
               );
@@ -693,15 +666,16 @@ class _MultiParentScreenState extends State<MultiParentScreen>
                   child: OutlinedButton(
                     onPressed: () => _resendInvitation(invitation),
                     style: OutlinedButton.styleFrom(
-                      side: const BorderSide(color: Color(0xFF6C63FF)),
+                      side: BorderSide(
+                          color: Theme.of(context).colorScheme.primary),
                       shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(8),
                       ),
                     ),
                     child: Text(
-                      'Yeniden Gönder',
-                      style: GoogleFonts.poppins(
-                        color: const Color(0xFF6C63FF),
+                      'Resend',
+                      style: theme.textTheme.bodyMedium?.copyWith(
+                        color: theme.colorScheme.primary,
                         fontWeight: FontWeight.w600,
                       ),
                     ),
@@ -718,8 +692,8 @@ class _MultiParentScreenState extends State<MultiParentScreen>
                       ),
                     ),
                     child: Text(
-                      'İptal Et',
-                      style: GoogleFonts.poppins(
+                      'Cancel',
+                      style: theme.textTheme.bodyMedium?.copyWith(
                         color: Colors.white,
                         fontWeight: FontWeight.w600,
                       ),
@@ -734,19 +708,19 @@ class _MultiParentScreenState extends State<MultiParentScreen>
   }
 
   void _showInviteParentDialog() {
+    final theme = Theme.of(context);
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
-        title: Text(
-          'Ebeveyn Davet Et',
-          style: GoogleFonts.poppins(fontWeight: FontWeight.bold),
-        ),
+        title: Text('Invite Parent',
+            style: theme.textTheme.titleMedium
+                ?.copyWith(fontWeight: FontWeight.bold)),
         content: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
             TextField(
               decoration: InputDecoration(
-                labelText: 'E-posta Adresi',
+                labelText: 'Email address',
                 border: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(8),
                 ),
@@ -755,28 +729,24 @@ class _MultiParentScreenState extends State<MultiParentScreen>
             SizedBox(height: 2.h),
             TextField(
               decoration: InputDecoration(
-                labelText: 'İlişki (Anne, Baba, Veli vb.)',
+                labelText: 'Relationship (e.g. Mother, Father, Guardian)',
                 border: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(8),
                 ),
               ),
             ),
             SizedBox(height: 2.h),
-            Text(
-              'İzinler',
-              style: GoogleFonts.poppins(fontWeight: FontWeight.w600),
-            ),
+            Text('Permissions', style: theme.textTheme.titleSmall),
             SizedBox(height: 1.h),
-            // Add permission checkboxes here
+            // permission checkboxes can be added here
           ],
         ),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context),
-            child: Text(
-              'İptal',
-              style: GoogleFonts.poppins(color: const Color(0xFF666666)),
-            ),
+            child: Text('Cancel',
+                style: theme.textTheme.bodyMedium?.copyWith(
+                    color: theme.colorScheme.onSurface.withOpacity(0.7))),
           ),
           ElevatedButton(
             onPressed: () {
@@ -784,12 +754,11 @@ class _MultiParentScreenState extends State<MultiParentScreen>
               Navigator.pop(context);
             },
             style: ElevatedButton.styleFrom(
-              backgroundColor: const Color(0xFF6C63FF),
+              backgroundColor: theme.colorScheme.primary,
             ),
-            child: Text(
-              'Davet Gönder',
-              style: GoogleFonts.poppins(color: Colors.white),
-            ),
+            child: Text('Send Invitation',
+                style:
+                    theme.textTheme.bodyMedium?.copyWith(color: Colors.white)),
           ),
         ],
       ),
@@ -825,24 +794,21 @@ class _MultiParentScreenState extends State<MultiParentScreen>
   }
 
   void _showRemoveParentDialog(Parent parent) {
+    final theme = Theme.of(context);
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
-        title: Text(
-          'Ebeveyni Kaldır',
-          style: GoogleFonts.poppins(fontWeight: FontWeight.bold),
-        ),
-        content: Text(
-          '${parent.name} adlı ebeveyni kaldırmak istediğinizden emin misiniz?',
-          style: GoogleFonts.poppins(),
-        ),
+        title: Text('Remove Parent',
+            style: theme.textTheme.titleMedium
+                ?.copyWith(fontWeight: FontWeight.bold)),
+        content: Text('Are you sure you want to remove ${parent.name}?',
+            style: theme.textTheme.bodyMedium),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context),
-            child: Text(
-              'İptal',
-              style: GoogleFonts.poppins(color: const Color(0xFF666666)),
-            ),
+            child: Text('Cancel',
+                style: theme.textTheme.bodyMedium?.copyWith(
+                    color: theme.colorScheme.onSurface.withOpacity(0.7))),
           ),
           ElevatedButton(
             onPressed: () {
@@ -852,10 +818,9 @@ class _MultiParentScreenState extends State<MultiParentScreen>
             style: ElevatedButton.styleFrom(
               backgroundColor: const Color(0xFFD67B7B),
             ),
-            child: Text(
-              'Kaldır',
-              style: GoogleFonts.poppins(color: Colors.white),
-            ),
+            child: Text('Remove',
+                style:
+                    theme.textTheme.bodyMedium?.copyWith(color: Colors.white)),
           ),
         ],
       ),
@@ -863,24 +828,22 @@ class _MultiParentScreenState extends State<MultiParentScreen>
   }
 
   void _showRemoveSharingDialog(SharedChild sharedChild) {
+    final theme = Theme.of(context);
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
-        title: Text(
-          'Paylaşımı Kaldır',
-          style: GoogleFonts.poppins(fontWeight: FontWeight.bold),
-        ),
+        title: Text('Remove Sharing',
+            style: theme.textTheme.titleMedium
+                ?.copyWith(fontWeight: FontWeight.bold)),
         content: Text(
-          '${sharedChild.childName} için paylaşımı kaldırmak istediğinizden emin misiniz?',
-          style: GoogleFonts.poppins(),
-        ),
+            'Are you sure you want to remove sharing for ${sharedChild.childName}?',
+            style: theme.textTheme.bodyMedium),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context),
-            child: Text(
-              'İptal',
-              style: GoogleFonts.poppins(color: const Color(0xFF666666)),
-            ),
+            child: Text('Cancel',
+                style: theme.textTheme.bodyMedium?.copyWith(
+                    color: theme.colorScheme.onSurface.withOpacity(0.7))),
           ),
           ElevatedButton(
             onPressed: () {
@@ -890,10 +853,9 @@ class _MultiParentScreenState extends State<MultiParentScreen>
             style: ElevatedButton.styleFrom(
               backgroundColor: const Color(0xFFD67B7B),
             ),
-            child: Text(
-              'Kaldır',
-              style: GoogleFonts.poppins(color: Colors.white),
-            ),
+            child: Text('Remove',
+                style:
+                    theme.textTheme.bodyMedium?.copyWith(color: Colors.white)),
           ),
         ],
       ),
@@ -904,10 +866,8 @@ class _MultiParentScreenState extends State<MultiParentScreen>
     // Resend invitation logic
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
-        content: Text(
-          'Davet yeniden gönderildi',
-          style: GoogleFonts.poppins(),
-        ),
+        content: Text('Invitation resent',
+            style: Theme.of(context).textTheme.bodyMedium),
         backgroundColor: const Color(0xFF4CAF50),
       ),
     );
@@ -920,10 +880,8 @@ class _MultiParentScreenState extends State<MultiParentScreen>
     });
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
-        content: Text(
-          'Davet iptal edildi',
-          style: GoogleFonts.poppins(),
-        ),
+        content: Text('Invitation cancelled',
+            style: Theme.of(context).textTheme.bodyMedium),
         backgroundColor: const Color(0xFFD67B7B),
       ),
     );
@@ -932,15 +890,15 @@ class _MultiParentScreenState extends State<MultiParentScreen>
   String _getPermissionText(String permission) {
     switch (permission) {
       case 'view':
-        return 'Görüntüleme';
+        return 'View';
       case 'edit':
-        return 'Düzenleme';
+        return 'Edit';
       case 'invite':
-        return 'Davet Etme';
+        return 'Invite';
       case 'delete':
-        return 'Silme';
+        return 'Delete';
       case 'progress':
-        return 'İlerleme';
+        return 'Progress';
       default:
         return permission;
     }
@@ -951,11 +909,11 @@ class _MultiParentScreenState extends State<MultiParentScreen>
     final difference = now.difference(date);
 
     if (difference.inDays == 0) {
-      return 'Bugün';
+      return 'Today';
     } else if (difference.inDays == 1) {
-      return 'Dün';
+      return 'Yesterday';
     } else if (difference.inDays < 7) {
-      return '${difference.inDays} gün önce';
+      return '${difference.inDays} days ago';
     } else {
       return '${date.day}/${date.month}/${date.year}';
     }

@@ -1,9 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:sizer/sizer.dart';
-import 'package:google_fonts/google_fonts.dart';
 import '../../core/activity_recommendation_engine.dart';
 import '../../widgets/custom_app_bar.dart';
-import '../../widgets/custom_bottom_bar.dart';
 import '../progress_tracking/progress_dashboard_screen.dart';
 import '../../theme/app_theme.dart';
 import '../../widgets/custom_icon_widget.dart';
@@ -136,7 +134,8 @@ class _ChildActivityScreenState extends State<ChildActivityScreen> {
     final isDark = theme.brightness == Brightness.dark;
 
     return Scaffold(
-      backgroundColor: isDark ? AppTheme.backgroundDark : AppTheme.backgroundLight,
+      backgroundColor:
+          isDark ? AppTheme.backgroundDark : AppTheme.backgroundLight,
       appBar: CustomAppBar(
         title: 'Hi ${widget.child.name}!',
         automaticallyImplyLeading: true,
@@ -147,7 +146,8 @@ class _ChildActivityScreenState extends State<ChildActivityScreen> {
             },
             icon: CustomIconWidget(
               iconName: 'help_outline',
-              color: isDark ? AppTheme.textPrimaryDark : AppTheme.textPrimaryLight,
+              color:
+                  isDark ? AppTheme.textPrimaryDark : AppTheme.textPrimaryLight,
               size: 24,
             ),
           ),
@@ -212,7 +212,9 @@ class _ChildActivityScreenState extends State<ChildActivityScreen> {
                   decoration: BoxDecoration(
                     shape: BoxShape.circle,
                     border: Border.all(
-                      color: isDark ? AppTheme.onPrimaryDark : AppTheme.onPrimaryLight,
+                      color: isDark
+                          ? AppTheme.onPrimaryDark
+                          : AppTheme.onPrimaryLight,
                       width: 2,
                     ),
                   ),
@@ -220,7 +222,9 @@ class _ChildActivityScreenState extends State<ChildActivityScreen> {
                     child: Text(
                       widget.child.name[0].toUpperCase(),
                       style: theme.textTheme.headlineMedium?.copyWith(
-                        color: isDark ? AppTheme.primaryDark : AppTheme.primaryLight,
+                        color: isDark
+                            ? AppTheme.primaryDark
+                            : AppTheme.primaryLight,
                         fontWeight: FontWeight.bold,
                       ),
                     ),
@@ -234,7 +238,9 @@ class _ChildActivityScreenState extends State<ChildActivityScreen> {
                       Text(
                         'Merhaba ${widget.child.name}!',
                         style: theme.textTheme.headlineSmall?.copyWith(
-                          color: isDark ? AppTheme.onPrimaryDark : AppTheme.onPrimaryLight,
+                          color: isDark
+                              ? AppTheme.onPrimaryDark
+                              : AppTheme.onPrimaryLight,
                           fontWeight: FontWeight.w600,
                         ),
                       ),
@@ -242,7 +248,9 @@ class _ChildActivityScreenState extends State<ChildActivityScreen> {
                       Text(
                         'Bugün ne yapmak istiyorsun?',
                         style: theme.textTheme.bodyMedium?.copyWith(
-                          color: isDark ? AppTheme.onPrimaryDark : AppTheme.onPrimaryLight,
+                          color: isDark
+                              ? AppTheme.onPrimaryDark
+                              : AppTheme.onPrimaryLight,
                         ),
                       ),
                     ],
@@ -295,7 +303,8 @@ class _ChildActivityScreenState extends State<ChildActivityScreen> {
     );
   }
 
-  Widget _buildStatCard(BuildContext context, String title, String value, String icon, Color color) {
+  Widget _buildStatCard(BuildContext context, String title, String value,
+      String icon, Color color) {
     final theme = Theme.of(context);
     final isDark = theme.brightness == Brightness.dark;
 
@@ -340,7 +349,9 @@ class _ChildActivityScreenState extends State<ChildActivityScreen> {
             Text(
               title,
               style: theme.textTheme.bodySmall?.copyWith(
-                color: isDark ? AppTheme.textSecondaryDark : AppTheme.textSecondaryLight,
+                color: isDark
+                    ? AppTheme.textSecondaryDark
+                    : AppTheme.textSecondaryLight,
               ),
               textAlign: TextAlign.center,
             ),
@@ -387,15 +398,19 @@ class _ChildActivityScreenState extends State<ChildActivityScreen> {
                 ),
                 const Spacer(),
                 Container(
-                  padding: EdgeInsets.symmetric(horizontal: 2.w, vertical: 0.5.h),
+                  padding:
+                      EdgeInsets.symmetric(horizontal: 2.w, vertical: 0.5.h),
                   decoration: BoxDecoration(
-                    color: isDark ? AppTheme.primaryDark : AppTheme.primaryLight,
+                    color:
+                        isDark ? AppTheme.primaryDark : AppTheme.primaryLight,
                     borderRadius: BorderRadius.circular(12),
                   ),
                   child: Text(
                     '${nextActivity.duration} min',
                     style: theme.textTheme.bodySmall?.copyWith(
-                      color: isDark ? AppTheme.onPrimaryDark : AppTheme.onPrimaryLight,
+                      color: isDark
+                          ? AppTheme.onPrimaryDark
+                          : AppTheme.onPrimaryLight,
                       fontWeight: FontWeight.w600,
                     ),
                   ),
@@ -408,12 +423,15 @@ class _ChildActivityScreenState extends State<ChildActivityScreen> {
                 Container(
                   padding: EdgeInsets.all(3.w),
                   decoration: BoxDecoration(
-                    color: isDark ? AppTheme.primaryDark : AppTheme.primaryLight,
+                    color:
+                        isDark ? AppTheme.primaryDark : AppTheme.primaryLight,
                     borderRadius: BorderRadius.circular(12),
                   ),
                   child: CustomIconWidget(
                     iconName: _getActivityIcon(nextActivity.activityType),
-                    color: isDark ? AppTheme.onPrimaryDark : AppTheme.onPrimaryLight,
+                    color: isDark
+                        ? AppTheme.onPrimaryDark
+                        : AppTheme.onPrimaryLight,
                     size: 24,
                   ),
                 ),
@@ -434,7 +452,9 @@ class _ChildActivityScreenState extends State<ChildActivityScreen> {
                       Text(
                         nextActivity.description,
                         style: theme.textTheme.bodyMedium?.copyWith(
-                          color: isDark ? AppTheme.textSecondaryDark : AppTheme.textSecondaryLight,
+                          color: isDark
+                              ? AppTheme.textSecondaryDark
+                              : AppTheme.textSecondaryLight,
                         ),
                         maxLines: 2,
                         overflow: TextOverflow.ellipsis,
@@ -460,7 +480,8 @@ class _ChildActivityScreenState extends State<ChildActivityScreen> {
                   );
                 },
                 style: ElevatedButton.styleFrom(
-                  backgroundColor: isDark ? AppTheme.primaryDark : AppTheme.primaryLight,
+                  backgroundColor:
+                      isDark ? AppTheme.primaryDark : AppTheme.primaryLight,
                   padding: EdgeInsets.symmetric(vertical: 2.h),
                   shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(12),
@@ -469,7 +490,9 @@ class _ChildActivityScreenState extends State<ChildActivityScreen> {
                 child: Text(
                   'Start Activity',
                   style: theme.textTheme.titleMedium?.copyWith(
-                    color: isDark ? AppTheme.onPrimaryDark : AppTheme.onPrimaryLight,
+                    color: isDark
+                        ? AppTheme.onPrimaryDark
+                        : AppTheme.onPrimaryLight,
                     fontWeight: FontWeight.w600,
                   ),
                 ),
@@ -546,7 +569,8 @@ class _ChildActivityScreenState extends State<ChildActivityScreen> {
               child: Center(
                 child: CustomIconWidget(
                   iconName: _getActivityIcon(activity.activityType),
-                  color: isDark ? AppTheme.onPrimaryDark : AppTheme.onPrimaryLight,
+                  color:
+                      isDark ? AppTheme.onPrimaryDark : AppTheme.onPrimaryLight,
                   size: 32,
                 ),
               ),
@@ -564,7 +588,9 @@ class _ChildActivityScreenState extends State<ChildActivityScreen> {
             Text(
               activity.description,
               style: theme.textTheme.bodySmall?.copyWith(
-                color: isDark ? AppTheme.textSecondaryDark : AppTheme.textSecondaryLight,
+                color: isDark
+                    ? AppTheme.textSecondaryDark
+                    : AppTheme.textSecondaryLight,
               ),
               maxLines: 2,
               overflow: TextOverflow.ellipsis,
@@ -573,15 +599,19 @@ class _ChildActivityScreenState extends State<ChildActivityScreen> {
             Row(
               children: [
                 Container(
-                  padding: EdgeInsets.symmetric(horizontal: 2.w, vertical: 0.5.h),
+                  padding:
+                      EdgeInsets.symmetric(horizontal: 2.w, vertical: 0.5.h),
                   decoration: BoxDecoration(
-                    color: isDark ? AppTheme.primaryDark : AppTheme.primaryLight,
+                    color:
+                        isDark ? AppTheme.primaryDark : AppTheme.primaryLight,
                     borderRadius: BorderRadius.circular(8),
                   ),
                   child: Text(
                     '${activity.duration} min',
                     style: theme.textTheme.bodySmall?.copyWith(
-                      color: isDark ? AppTheme.onPrimaryDark : AppTheme.onPrimaryLight,
+                      color: isDark
+                          ? AppTheme.onPrimaryDark
+                          : AppTheme.onPrimaryLight,
                       fontWeight: FontWeight.w600,
                     ),
                   ),
@@ -601,7 +631,8 @@ class _ChildActivityScreenState extends State<ChildActivityScreen> {
                   },
                   icon: CustomIconWidget(
                     iconName: 'play_arrow',
-                    color: isDark ? AppTheme.primaryDark : AppTheme.primaryLight,
+                    color:
+                        isDark ? AppTheme.primaryDark : AppTheme.primaryLight,
                     size: 24,
                   ),
                 ),
@@ -686,7 +717,9 @@ class _ChildActivityScreenState extends State<ChildActivityScreen> {
             Text(
               achievement.description,
               style: theme.textTheme.bodySmall?.copyWith(
-                color: isDark ? AppTheme.textSecondaryDark : AppTheme.textSecondaryLight,
+                color: isDark
+                    ? AppTheme.textSecondaryDark
+                    : AppTheme.textSecondaryLight,
               ),
               textAlign: TextAlign.center,
               maxLines: 2,
