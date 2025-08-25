@@ -69,15 +69,15 @@ class _SubscriptionScreenState extends State<SubscriptionScreen> {
       currency: 'USD',
       period: 'month',
       features: [
-        'Tüm aktivitelere sınırsız erişim',
-        'Gelişim takibi ve rozetler',
-        'Çoklu ebeveyn yönetimi',
-        'İlerleme desteği',
+        'Unlimited access to all activities',
+        'Development tracking and badges',
+        'Multi-parent management',
+        'Progress support',
       ],
       limitations: [
-        'Kamera desteği yok',
-        'Canlı izleme yok',
-        'Video kaydı yok',
+        'No camera support',
+        'No live monitoring',
+        'No video recording',
       ],
     );
   }
@@ -88,7 +88,7 @@ class _SubscriptionScreenState extends State<SubscriptionScreen> {
     return Scaffold(
       backgroundColor: theme.scaffoldBackgroundColor,
       appBar: CustomAppBar(
-        title: 'Üyelik ve Planlar',
+        title: 'Subscription & Billing',
         automaticallyImplyLeading: true,
         onBackPressed: () => Navigator.pop(context),
       ),
@@ -148,7 +148,7 @@ class _SubscriptionScreenState extends State<SubscriptionScreen> {
               SizedBox(width: 2.w),
               Expanded(
                 child: Text(
-                  'Mevcut Plan',
+                  'Current Plan',
                   style: theme.textTheme.titleMedium?.copyWith(
                     fontWeight: FontWeight.w600,
                     color: theme.colorScheme.onPrimary,
@@ -174,7 +174,7 @@ class _SubscriptionScreenState extends State<SubscriptionScreen> {
           ),
           SizedBox(height: 2.h),
           Text(
-            'Özellikler:',
+            'Features:',
             style: theme.textTheme.titleSmall?.copyWith(
               fontWeight: FontWeight.w600,
               color: theme.colorScheme.onPrimary,
@@ -226,7 +226,7 @@ class _SubscriptionScreenState extends State<SubscriptionScreen> {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(
-            'Çocuklar (${_children.length})',
+            'Children (${_children.length})',
             style: theme.textTheme.titleMedium?.copyWith(
               fontWeight: FontWeight.w600,
             ),
@@ -252,7 +252,7 @@ class _SubscriptionScreenState extends State<SubscriptionScreen> {
       padding: EdgeInsets.all(3.w),
       decoration: BoxDecoration(
         color: theme.colorScheme.surfaceVariant,
-        borderRadius: BorderRadius.circular(8),
+        borderRadius: BorderRadius.circular(12),
       ),
       child: Row(
         children: [
@@ -279,7 +279,7 @@ class _SubscriptionScreenState extends State<SubscriptionScreen> {
                   ),
                 ),
                 Text(
-                  '$age yaşında',
+                  '$age years old',
                   style: theme.textTheme.bodySmall?.copyWith(
                     color: theme.colorScheme.onSurfaceVariant,
                   ),
@@ -306,10 +306,10 @@ class _SubscriptionScreenState extends State<SubscriptionScreen> {
 
     if (_children.length == 2) {
       discount = 0.15;
-      discountText = '2. çocuk için %15 indirim';
+      discountText = '15% discount for 2nd child';
     } else if (_children.length >= 3) {
       discount = 0.25;
-      discountText = '3+ çocuk için %25 indirim';
+      discountText = '25% discount for 3+ children';
     }
 
     if (discount > 0) {
@@ -317,7 +317,7 @@ class _SubscriptionScreenState extends State<SubscriptionScreen> {
         padding: EdgeInsets.all(3.w),
         decoration: BoxDecoration(
           color: theme.colorScheme.tertiary.withOpacity(0.1),
-          borderRadius: BorderRadius.circular(8),
+          borderRadius: BorderRadius.circular(12),
           border: Border.all(color: theme.colorScheme.tertiary.withOpacity(0.3)),
         ),
         child: Row(
@@ -350,38 +350,38 @@ class _SubscriptionScreenState extends State<SubscriptionScreen> {
     final plans = [
       SubscriptionPlan(
         id: 'free',
-        name: 'Ücretsiz',
+        name: 'Free',
         price: 0.0,
         currency: 'USD',
         period: 'month',
         features: [
-          'Günde 1 aktivite',
-          'Temel özellikler',
+          '1 activity per day',
+          'Basic features',
         ],
         limitations: [
-          'Kamera desteği yok',
-          'Gelişim takibi yok',
-          'İlerleme grafikleri yok',
-          'Ebeveyn puanlaması yok',
-          'Diğer ebeveynle paylaşım yok',
+          'No camera support',
+          'No development tracking',
+          'No progress charts',
+          'No parent scoring',
+          'No sharing with other parents',
         ],
       ),
       SubscriptionPlan(
         id: 'standard',
-        name: 'Standart',
+        name: 'Standard',
         price: 7.99,
         currency: 'USD',
         period: 'month',
         features: [
-          'Tüm aktivitelere sınırsız erişim',
-          'Gelişim takibi ve rozetler',
-          'Çoklu ebeveyn yönetimi',
-          'İlerleme desteği',
+          'Unlimited access to all activities',
+          'Development tracking and badges',
+          'Multi-parent management',
+          'Progress support',
         ],
         limitations: [
-          'Kamera desteği yok',
-          'Canlı izleme yok',
-          'Video kaydı yok',
+          'No camera support',
+          'No live monitoring',
+          'No video recording',
         ],
       ),
       SubscriptionPlan(
@@ -391,11 +391,11 @@ class _SubscriptionScreenState extends State<SubscriptionScreen> {
         currency: 'USD',
         period: 'month',
         features: [
-          'Tüm Standart özellikler',
-          'Kamera destekli aktiviteler',
-          'Video kaydı (15 gün saklama)',
-          'Ebeveyn video indirme',
-          'Canlı izleme',
+          'All Standard features',
+          'Camera-supported activities',
+          'Video recording (15-day storage)',
+          'Parent video download',
+          'Live monitoring',
         ],
         limitations: [],
       ),
@@ -405,7 +405,7 @@ class _SubscriptionScreenState extends State<SubscriptionScreen> {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Text(
-          'Plan Karşılaştırması',
+          'Plan Comparison',
           style: theme.textTheme.titleLarge?.copyWith(
             fontWeight: FontWeight.w600,
           ),
@@ -472,7 +472,7 @@ class _SubscriptionScreenState extends State<SubscriptionScreen> {
                     borderRadius: BorderRadius.circular(12),
                   ),
                   child: Text(
-                    'Mevcut',
+                    'Current',
                     style: theme.textTheme.labelSmall?.copyWith(
                       fontWeight: FontWeight.w600,
                       color: theme.colorScheme.tertiary,
@@ -494,7 +494,7 @@ class _SubscriptionScreenState extends State<SubscriptionScreen> {
           ),
           SizedBox(height: 2.h),
           Text(
-            'Özellikler:',
+            'Features:',
             style: theme.textTheme.titleSmall?.copyWith(
               fontWeight: FontWeight.w600,
             ),
@@ -524,7 +524,7 @@ class _SubscriptionScreenState extends State<SubscriptionScreen> {
           if (plan.limitations.isNotEmpty) ...[
             SizedBox(height: 1.h),
             Text(
-              'Sınırlamalar:',
+              'Limitations:',
               style: theme.textTheme.titleSmall?.copyWith(
                 fontWeight: FontWeight.w600,
                 color: theme.colorScheme.error,
@@ -577,7 +577,7 @@ class _SubscriptionScreenState extends State<SubscriptionScreen> {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(
-            'Promosyon Kodu',
+            'Promo Code',
             style: theme.textTheme.titleMedium?.copyWith(
               fontWeight: FontWeight.w600,
             ),
@@ -588,9 +588,9 @@ class _SubscriptionScreenState extends State<SubscriptionScreen> {
               Expanded(
                 child: TextField(
                   decoration: InputDecoration(
-                    hintText: 'Promosyon kodunuzu girin',
+                    hintText: 'Enter your promo code',
                     border: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(8),
+                      borderRadius: BorderRadius.circular(12),
                     ),
                     suffixIcon: _isVoucherValid
                         ? Icon(
@@ -611,7 +611,7 @@ class _SubscriptionScreenState extends State<SubscriptionScreen> {
               ElevatedButton(
                 onPressed: _validateVoucher,
                 child: Text(
-                  'Uygula',
+                  'Apply',
                   style: theme.textTheme.labelLarge?.copyWith(
                     fontWeight: FontWeight.w600,
                   ),
@@ -625,7 +625,7 @@ class _SubscriptionScreenState extends State<SubscriptionScreen> {
               padding: EdgeInsets.all(2.w),
               decoration: BoxDecoration(
                 color: theme.colorScheme.tertiary.withOpacity(0.1),
-                borderRadius: BorderRadius.circular(8),
+                borderRadius: BorderRadius.circular(12),
               ),
               child: Row(
                 children: [
@@ -637,7 +637,7 @@ class _SubscriptionScreenState extends State<SubscriptionScreen> {
                   SizedBox(width: 2.w),
                   Expanded(
                     child: Text(
-                      'Promosyon kodu geçerli!',
+                      'Promo code valid!',
                       style: theme.textTheme.bodySmall?.copyWith(
                         fontWeight: FontWeight.w600,
                         color: theme.colorScheme.tertiary,
@@ -684,19 +684,19 @@ class _SubscriptionScreenState extends State<SubscriptionScreen> {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(
-            'Fiyat Detayı',
+            'Pricing Details',
             style: theme.textTheme.titleMedium?.copyWith(
               fontWeight: FontWeight.w600,
             ),
           ),
           SizedBox(height: 2.h),
-          _buildPricingRow('Temel Fiyat', '\$${basePrice.toStringAsFixed(2)}'),
-          _buildPricingRow('Çocuk Sayısı', '${_children.length}'),
-          _buildPricingRow('Ara Toplam', '\$${totalPrice.toStringAsFixed(2)}'),
+          _buildPricingRow('Base Price', '\$${basePrice.toStringAsFixed(2)}'),
+          _buildPricingRow('Number of Children', '${_children.length}'),
+          _buildPricingRow('Subtotal', '\$${totalPrice.toStringAsFixed(2)}'),
           if (discount > 0)
-            _buildPricingRow('İndirim', '-\$${discount.toStringAsFixed(2)}', isDiscount: true),
+            _buildPricingRow('Discount', '-\$${discount.toStringAsFixed(2)}', isDiscount: true),
           Divider(height: 2.h),
-          _buildPricingRow('Toplam', '\$${finalPrice.toStringAsFixed(2)}', isTotal: true),
+          _buildPricingRow('Total', '\$${finalPrice.toStringAsFixed(2)}', isTotal: true),
         ],
       ),
     );
@@ -743,7 +743,7 @@ class _SubscriptionScreenState extends State<SubscriptionScreen> {
               padding: EdgeInsets.symmetric(vertical: 3.h),
             ),
             child: Text(
-              'Planı Yükselt',
+              'Upgrade Plan',
               style: theme.textTheme.titleMedium?.copyWith(
                 fontWeight: FontWeight.w600,
                 color: theme.colorScheme.onPrimary,
@@ -761,7 +761,7 @@ class _SubscriptionScreenState extends State<SubscriptionScreen> {
               padding: EdgeInsets.symmetric(vertical: 3.h),
             ),
             child: Text(
-              'Üyeliği İptal Et',
+              'Cancel Subscription',
               style: theme.textTheme.titleMedium?.copyWith(
                 fontWeight: FontWeight.w600,
                 color: theme.colorScheme.error,
@@ -783,7 +783,7 @@ class _SubscriptionScreenState extends State<SubscriptionScreen> {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text(
-            'Promosyon kodu uygulandı!',
+            'Promo code applied!',
             style: theme.textTheme.bodyMedium?.copyWith(
               color: theme.colorScheme.onPrimary,
             ),
@@ -801,18 +801,18 @@ class _SubscriptionScreenState extends State<SubscriptionScreen> {
       context: context,
       builder: (context) => AlertDialog(
         title: Text(
-          'Plan Yükseltme',
+          'Plan Upgrade',
           style: theme.textTheme.headlineSmall?.copyWith(fontWeight: FontWeight.bold),
         ),
         content: Text(
-          'Planınızı yükseltmek istediğinizden emin misiniz?',
+          'Are you sure you want to upgrade your plan?',
           style: theme.textTheme.bodyLarge,
         ),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context),
             child: Text(
-              'İptal',
+              'Cancel',
               style: theme.textTheme.labelLarge?.copyWith(
                 color: theme.colorScheme.onSurfaceVariant,
               ),
@@ -824,7 +824,7 @@ class _SubscriptionScreenState extends State<SubscriptionScreen> {
               Navigator.pop(context);
             },
             child: Text(
-              'Yükselt',
+              'Upgrade',
               style: theme.textTheme.labelLarge?.copyWith(
                 color: theme.colorScheme.onPrimary,
               ),
@@ -841,18 +841,18 @@ class _SubscriptionScreenState extends State<SubscriptionScreen> {
       context: context,
       builder: (context) => AlertDialog(
         title: Text(
-          'Üyelik İptali',
+          'Subscription Cancellation',
           style: theme.textTheme.headlineSmall?.copyWith(fontWeight: FontWeight.bold),
         ),
         content: Text(
-          'Üyeliğinizi iptal etmek istediğinizden emin misiniz?',
+          'Are you sure you want to cancel your subscription?',
           style: theme.textTheme.bodyLarge,
         ),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context),
             child: Text(
-              'İptal',
+              'Cancel',
               style: theme.textTheme.labelLarge?.copyWith(
                 color: theme.colorScheme.onSurfaceVariant,
               ),
@@ -868,7 +868,7 @@ class _SubscriptionScreenState extends State<SubscriptionScreen> {
               foregroundColor: theme.colorScheme.onError,
             ),
             child: Text(
-              'İptal Et',
+              'Cancel',
               style: theme.textTheme.labelLarge?.copyWith(
                 color: theme.colorScheme.onError,
               ),
