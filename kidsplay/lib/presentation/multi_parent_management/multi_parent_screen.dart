@@ -38,7 +38,7 @@ class _MultiParentScreenState extends State<MultiParentScreen>
         id: '1',
         name: 'Ayşe Yılmaz',
         email: 'ayse@example.com',
-        relationship: 'Anne',
+        relationship: 'Mother',
         profileImageUrl: 'https://example.com/ayse.jpg',
         isPrimary: true,
         permissions: ['view', 'edit', 'invite', 'delete'],
@@ -48,7 +48,7 @@ class _MultiParentScreenState extends State<MultiParentScreen>
         id: '2',
         name: 'Mehmet Yılmaz',
         email: 'mehmet@example.com',
-        relationship: 'Baba',
+        relationship: 'Father',
         profileImageUrl: 'https://example.com/mehmet.jpg',
         isPrimary: false,
         permissions: ['view', 'edit'],
@@ -96,7 +96,7 @@ class _MultiParentScreenState extends State<MultiParentScreen>
     return Scaffold(
       backgroundColor: theme.scaffoldBackgroundColor,
       appBar: CustomAppBar(
-        title: 'Çoklu Ebeveyn Yönetimi',
+        title: 'Multi-Parent Management',
         automaticallyImplyLeading: true,
         onBackPressed: () => Navigator.pop(context),
       ),
@@ -143,9 +143,9 @@ class _MultiParentScreenState extends State<MultiParentScreen>
         labelStyle: theme.textTheme.titleSmall,
         unselectedLabelStyle: theme.textTheme.bodyMedium,
         tabs: const [
-          Tab(text: 'Ebeveynler'),
-          Tab(text: 'Paylaşılan Çocuklar'),
-          Tab(text: 'Davetler'),
+          Tab(text: 'Parents'),
+          Tab(text: 'Shared Children'),
+          Tab(text: 'Invitations'),
         ],
       ),
     );
@@ -159,7 +159,7 @@ class _MultiParentScreenState extends State<MultiParentScreen>
         backgroundColor: theme.colorScheme.primary,
         icon: Icon(Icons.person_add, color: theme.colorScheme.onPrimary),
         label: Text(
-          'Ebeveyn Davet Et',
+          'Invite Parent',
           style: theme.textTheme.labelLarge?.copyWith(
             color: theme.colorScheme.onPrimary,
           ),
@@ -236,7 +236,7 @@ class _MultiParentScreenState extends State<MultiParentScreen>
                               borderRadius: BorderRadius.circular(12),
                             ),
                             child: Text(
-                              'Birincil',
+                              'Primary',
                               style: theme.textTheme.labelSmall?.copyWith(
                                 fontWeight: FontWeight.w600,
                                 color: theme.colorScheme.tertiary,
@@ -269,7 +269,7 @@ class _MultiParentScreenState extends State<MultiParentScreen>
                         children: [
                           Icon(Icons.edit, color: theme.colorScheme.primary),
                           const SizedBox(width: 8),
-                          const Text('Düzenle'),
+                          const Text('Edit'),
                         ],
                       ),
                     ),
@@ -279,7 +279,7 @@ class _MultiParentScreenState extends State<MultiParentScreen>
                         children: [
                           Icon(Icons.security, color: theme.colorScheme.primary),
                           const SizedBox(width: 8),
-                          const Text('İzinler'),
+                          const Text('Permissions'),
                         ],
                       ),
                     ),
@@ -289,7 +289,7 @@ class _MultiParentScreenState extends State<MultiParentScreen>
                         children: [
                           Icon(Icons.person_remove, color: theme.colorScheme.error),
                           const SizedBox(width: 8),
-                          const Text('Kaldır'),
+                          const Text('Remove'),
                         ],
                       ),
                     ),
@@ -304,7 +304,7 @@ class _MultiParentScreenState extends State<MultiParentScreen>
           ),
           SizedBox(height: 2.h),
           Text(
-            'İzinler',
+            'Permissions',
             style: theme.textTheme.titleSmall?.copyWith(
               fontWeight: FontWeight.w600,
             ),
@@ -332,7 +332,7 @@ class _MultiParentScreenState extends State<MultiParentScreen>
           ),
           SizedBox(height: 1.h),
           Text(
-            'Katılım: ${_formatDate(parent.joinedAt)}',
+            'Joined: ${_formatDate(parent.joinedAt)}',
             style: theme.textTheme.bodySmall,
           ),
         ],
@@ -394,13 +394,13 @@ class _MultiParentScreenState extends State<MultiParentScreen>
                       ),
                     ),
                     Text(
-                      '${sharedChild.childAge} yaşında',
+                      '${sharedChild.childAge} years old',
                       style: theme.textTheme.bodyMedium?.copyWith(
                         color: theme.colorScheme.onSurfaceVariant,
                       ),
                     ),
                     Text(
-                      '${sharedChild.parentIds.length} ebeveyn paylaşıyor',
+                      '${sharedChild.parentIds.length} parents sharing',
                       style: theme.textTheme.bodySmall,
                     ),
                   ],
@@ -415,7 +415,7 @@ class _MultiParentScreenState extends State<MultiParentScreen>
                       children: [
                         Icon(Icons.trending_up, color: theme.colorScheme.primary),
                         const SizedBox(width: 8),
-                        const Text('İlerlemeyi Görüntüle'),
+                        const Text('View Progress'),
                       ],
                     ),
                   ),
@@ -425,7 +425,7 @@ class _MultiParentScreenState extends State<MultiParentScreen>
                       children: [
                         Icon(Icons.security, color: theme.colorScheme.primary),
                         const SizedBox(width: 8),
-                        const Text('İzinleri Yönet'),
+                        const Text('Manage Permissions'),
                       ],
                     ),
                   ),
@@ -435,7 +435,7 @@ class _MultiParentScreenState extends State<MultiParentScreen>
                       children: [
                         Icon(Icons.share, color: theme.colorScheme.error),
                         const SizedBox(width: 8),
-                        const Text('Paylaşımı Kaldır'),
+                        const Text('Remove Sharing'),
                       ],
                     ),
                   ),
@@ -450,7 +450,7 @@ class _MultiParentScreenState extends State<MultiParentScreen>
           ),
           SizedBox(height: 2.h),
           Text(
-            'Paylaşım İzinleri',
+            'Sharing Permissions',
             style: theme.textTheme.titleSmall?.copyWith(
               fontWeight: FontWeight.w600,
             ),
@@ -478,7 +478,7 @@ class _MultiParentScreenState extends State<MultiParentScreen>
           ),
           SizedBox(height: 1.h),
           Text(
-            'Paylaşım: ${_formatDate(sharedChild.sharedAt)}',
+            'Shared: ${_formatDate(sharedChild.sharedAt)}',
             style: theme.textTheme.bodySmall,
           ),
         ],
@@ -500,7 +500,7 @@ class _MultiParentScreenState extends State<MultiParentScreen>
             ),
             SizedBox(height: 2.h),
             Text(
-              'Bekleyen davet yok',
+              'No pending invitations',
               style: theme.textTheme.titleMedium?.copyWith(
                 fontWeight: FontWeight.w600,
                 color: theme.colorScheme.onSurfaceVariant,
@@ -508,7 +508,7 @@ class _MultiParentScreenState extends State<MultiParentScreen>
             ),
             SizedBox(height: 1.h),
             Text(
-              'Yeni ebeveyn davet etmek için\n"Ebeveyn Davet Et" butonunu kullanın',
+              'To invite a new parent,\nuse the "Invite Parent" button',
               style: theme.textTheme.bodyMedium?.copyWith(
                 color: theme.colorScheme.onSurfaceVariant,
               ),
@@ -573,13 +573,13 @@ class _MultiParentScreenState extends State<MultiParentScreen>
                       ),
                     ),
                     Text(
-                      'Davet eden: ${invitation.invitedBy}',
+                      'Invited by: ${invitation.invitedBy}',
                       style: theme.textTheme.bodyMedium?.copyWith(
                         color: theme.colorScheme.onSurfaceVariant,
                       ),
                     ),
                     Text(
-                      'Çocuk: ${invitation.childName}',
+                      'Child: ${invitation.childName}',
                       style: theme.textTheme.bodySmall,
                     ),
                   ],
@@ -593,7 +593,7 @@ class _MultiParentScreenState extends State<MultiParentScreen>
                     borderRadius: BorderRadius.circular(12),
                   ),
                   child: Text(
-                    'Süresi Doldu',
+                    'Expired',
                     style: theme.textTheme.labelSmall?.copyWith(
                       fontWeight: FontWeight.w600,
                       color: theme.colorScheme.error,
@@ -608,7 +608,7 @@ class _MultiParentScreenState extends State<MultiParentScreen>
                     borderRadius: BorderRadius.circular(12),
                   ),
                   child: Text(
-                    '$daysLeft gün kaldı',
+                    '$daysLeft days left',
                     style: theme.textTheme.labelSmall?.copyWith(
                       fontWeight: FontWeight.w600,
                       color: theme.colorScheme.secondary,
@@ -619,7 +619,7 @@ class _MultiParentScreenState extends State<MultiParentScreen>
           ),
           SizedBox(height: 2.h),
           Text(
-            'İzinler',
+            'Permissions',
             style: theme.textTheme.titleSmall?.copyWith(
               fontWeight: FontWeight.w600,
             ),
@@ -653,7 +653,7 @@ class _MultiParentScreenState extends State<MultiParentScreen>
                   child: OutlinedButton(
                     onPressed: () => _resendInvitation(invitation),
                     child: Text(
-                      'Yeniden Gönder',
+                      'Resend',
                       style: theme.textTheme.labelLarge?.copyWith(
                         fontWeight: FontWeight.w600,
                       ),
@@ -669,7 +669,7 @@ class _MultiParentScreenState extends State<MultiParentScreen>
                       foregroundColor: theme.colorScheme.onError,
                     ),
                     child: Text(
-                      'İptal Et',
+                      'Cancel',
                       style: theme.textTheme.labelLarge?.copyWith(
                         fontWeight: FontWeight.w600,
                         color: theme.colorScheme.onError,
@@ -690,7 +690,7 @@ class _MultiParentScreenState extends State<MultiParentScreen>
       context: context,
       builder: (context) => AlertDialog(
         title: Text(
-          'Ebeveyn Davet Et',
+          'Invite Parent',
           style: theme.textTheme.headlineSmall?.copyWith(fontWeight: FontWeight.bold),
         ),
         content: Column(
@@ -698,24 +698,24 @@ class _MultiParentScreenState extends State<MultiParentScreen>
           children: [
             TextField(
               decoration: InputDecoration(
-                labelText: 'E-posta Adresi',
+                labelText: 'Email Address',
                 border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(8),
+                  borderRadius: BorderRadius.circular(12),
                 ),
               ),
             ),
             SizedBox(height: 2.h),
             TextField(
               decoration: InputDecoration(
-                labelText: 'İlişki (Anne, Baba, Veli vb.)',
+                labelText: 'Relationship (Mother, Father, Guardian, etc.)',
                 border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(8),
+                  borderRadius: BorderRadius.circular(12),
                 ),
               ),
             ),
             SizedBox(height: 2.h),
             Text(
-              'İzinler',
+              'Permissions',
               style: theme.textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w600),
             ),
             SizedBox(height: 1.h),
@@ -726,7 +726,7 @@ class _MultiParentScreenState extends State<MultiParentScreen>
           TextButton(
             onPressed: () => Navigator.pop(context),
             child: Text(
-              'İptal',
+              'Cancel',
               style: theme.textTheme.labelLarge?.copyWith(
                 color: theme.colorScheme.onSurfaceVariant,
               ),
@@ -738,7 +738,7 @@ class _MultiParentScreenState extends State<MultiParentScreen>
               Navigator.pop(context);
             },
             child: Text(
-              'Davet Gönder',
+              'Send Invitation',
               style: theme.textTheme.labelLarge?.copyWith(
                 color: theme.colorScheme.onPrimary,
               ),
@@ -783,18 +783,18 @@ class _MultiParentScreenState extends State<MultiParentScreen>
       context: context,
       builder: (context) => AlertDialog(
         title: Text(
-          'Ebeveyni Kaldır',
+          'Remove Parent',
           style: theme.textTheme.headlineSmall?.copyWith(fontWeight: FontWeight.bold),
         ),
         content: Text(
-          '${parent.name} adlı ebeveyni kaldırmak istediğinizden emin misiniz?',
+          'Are you sure you want to remove ${parent.name}?',
           style: theme.textTheme.bodyLarge,
         ),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context),
             child: Text(
-              'İptal',
+              'Cancel',
               style: theme.textTheme.labelLarge?.copyWith(
                 color: theme.colorScheme.onSurfaceVariant,
               ),
@@ -810,7 +810,7 @@ class _MultiParentScreenState extends State<MultiParentScreen>
               foregroundColor: theme.colorScheme.onError,
             ),
             child: Text(
-              'Kaldır',
+              'Remove',
               style: theme.textTheme.labelLarge?.copyWith(
                 color: theme.colorScheme.onError,
               ),
@@ -827,18 +827,18 @@ class _MultiParentScreenState extends State<MultiParentScreen>
       context: context,
       builder: (context) => AlertDialog(
         title: Text(
-          'Paylaşımı Kaldır',
+          'Remove Sharing',
           style: theme.textTheme.headlineSmall?.copyWith(fontWeight: FontWeight.bold),
         ),
         content: Text(
-          '${sharedChild.childName} için paylaşımı kaldırmak istediğinizden emin misiniz?',
+          'Are you sure you want to remove sharing for ${sharedChild.childName}?',
           style: theme.textTheme.bodyLarge,
         ),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context),
             child: Text(
-              'İptal',
+              'Cancel',
               style: theme.textTheme.labelLarge?.copyWith(
                 color: theme.colorScheme.onSurfaceVariant,
               ),
@@ -854,7 +854,7 @@ class _MultiParentScreenState extends State<MultiParentScreen>
               foregroundColor: theme.colorScheme.onError,
             ),
             child: Text(
-              'Kaldır',
+              'Remove',
               style: theme.textTheme.labelLarge?.copyWith(
                 color: theme.colorScheme.onError,
               ),
@@ -871,7 +871,7 @@ class _MultiParentScreenState extends State<MultiParentScreen>
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
         content: Text(
-          'Davet yeniden gönderildi',
+          'Invitation resent',
           style: theme.textTheme.bodyMedium?.copyWith(
             color: theme.colorScheme.onPrimary,
           ),
@@ -890,7 +890,7 @@ class _MultiParentScreenState extends State<MultiParentScreen>
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
         content: Text(
-          'Davet iptal edildi',
+          'Invitation cancelled',
           style: theme.textTheme.bodyMedium?.copyWith(
             color: theme.colorScheme.onError,
           ),
@@ -903,15 +903,15 @@ class _MultiParentScreenState extends State<MultiParentScreen>
   String _getPermissionText(String permission) {
     switch (permission) {
       case 'view':
-        return 'Görüntüleme';
+        return 'View';
       case 'edit':
-        return 'Düzenleme';
+        return 'Edit';
       case 'invite':
-        return 'Davet Etme';
+        return 'Invite';
       case 'delete':
-        return 'Silme';
+        return 'Delete';
       case 'progress':
-        return 'İlerleme';
+        return 'Progress';
       default:
         return permission;
     }
@@ -922,11 +922,11 @@ class _MultiParentScreenState extends State<MultiParentScreen>
     final difference = now.difference(date);
 
     if (difference.inDays == 0) {
-      return 'Bugün';
+      return 'Today';
     } else if (difference.inDays == 1) {
-      return 'Dün';
+      return 'Yesterday';
     } else if (difference.inDays < 7) {
-      return '${difference.inDays} gün önce';
+      return '${difference.inDays} days ago';
     } else {
       return '${date.day}/${date.month}/${date.year}';
     }
