@@ -78,7 +78,9 @@ class _ChildSelectionDashboardState extends State<ChildSelectionDashboard> {
       body: Column(
         children: [
           DashboardHeader(
-            parentName: "Sarah",
+            parentName: _authProvider.userProfile?['fullName'] ?? 
+                       _authProvider.currentUser?.displayName ?? 
+                       "Parent",
             notificationCount: 3,
             onProfileTap: () => _navigateToProfile(),
             onSettingsTap: () => _navigateToSettings(),

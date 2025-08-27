@@ -5,6 +5,7 @@ import 'package:sizer/sizer.dart';
 import '../../core/app_export.dart';
 import '../../widgets/custom_icon_widget.dart';
 import '../../services/auth_provider.dart';
+import '../../services/demo_data_helper.dart';
 import './widgets/biometric_auth_widget.dart';
 import './widgets/login_form_widget.dart';
 import './widgets/login_header_widget.dart';
@@ -299,6 +300,18 @@ class _ParentLoginState extends State<ParentLogin> {
                     // Sign Up Prompt
                     SignupPromptWidget(
                       onSignUpTap: _handleSignUp,
+                    ),
+
+                    // Demo Data Button
+                    TextButton(
+                      onPressed: () => DemoDataHelper.showDemoDataDialog(context),
+                      child: Text(
+                        'Try Demo Account',
+                        style: theme.textTheme.bodyMedium?.copyWith(
+                          color: theme.colorScheme.secondary,
+                          decoration: TextDecoration.underline,
+                        ),
+                      ),
                     ),
 
                     SizedBox(height: 2.h),

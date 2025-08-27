@@ -5,6 +5,7 @@ import 'package:sizer/sizer.dart';
 
 import '../../core/app_export.dart';
 import '../../services/auth_provider.dart';
+import '../../services/demo_data_helper.dart';
 import './widgets/app_logo_widget.dart';
 import './widgets/registration_form_widget.dart';
 import './widgets/social_registration_widget.dart';
@@ -235,7 +236,20 @@ class _ParentRegistrationState extends State<ParentRegistration> {
                   ),
                 ],
               ),
-              SizedBox(height: 4.h),
+              SizedBox(height: 3.h),
+              
+              // Demo Data Button
+              TextButton(
+                onPressed: () => DemoDataHelper.showDemoDataDialog(context),
+                child: Text(
+                  'Create Demo Data for Testing',
+                  style: theme.textTheme.bodyMedium?.copyWith(
+                    color: theme.colorScheme.secondary,
+                    decoration: TextDecoration.underline,
+                  ),
+                ),
+              ),
+              SizedBox(height: 2.h),
             ],
           ),
         ),
