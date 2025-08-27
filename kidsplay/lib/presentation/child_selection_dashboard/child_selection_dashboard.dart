@@ -41,6 +41,13 @@ class _ChildSelectionDashboardState extends State<ChildSelectionDashboard> {
     _loadChildren();
   }
 
+  @override
+  void didUpdateWidget(ChildSelectionDashboard oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    // Refresh children data when widget updates
+    _loadChildren();
+  }
+
   Future<void> _loadChildren() async {
     if (_authProvider.currentUser == null) return;
 
@@ -555,9 +562,13 @@ class _ChildSelectionDashboardState extends State<ChildSelectionDashboard> {
     );
   }
 
-  void _addNewChild() {
+  void _addNewChild() async {
     HapticFeedback.lightImpact();
-    Navigator.pushNamed(context, '/child-profile-creation');
+    final result = await Navigator.pushNamed(context, '/child-profile-creation');
+    // Refresh the children list when returning from child creation
+    if (result != null) {
+      _loadChildren();
+    }
   }
 
   void _navigateToProfile() {

@@ -230,7 +230,7 @@ class _ChildProfileCreationState extends State<ChildProfileCreation>
                   padding: EdgeInsets.all(4.w),
                   decoration: BoxDecoration(
                     color: AppTheme.lightTheme.colorScheme.primary
-                        .withValues(alpha: 0.1),
+                        .withOpacity(0.1),
                     shape: BoxShape.circle,
                   ),
                   child: CustomIconWidget(
@@ -258,9 +258,8 @@ class _ChildProfileCreationState extends State<ChildProfileCreation>
                 SizedBox(height: 3.h),
                 ElevatedButton(
                   onPressed: () {
-                    Navigator.pop(context);
-                    Navigator.pushReplacementNamed(
-                        context, '/child-selection-dashboard');
+                    Navigator.pop(context); // Close success dialog
+                    Navigator.pop(context, 'profile_created'); // Return to dashboard with result
                   },
                   style: ElevatedButton.styleFrom(
                     backgroundColor: AppTheme.lightTheme.colorScheme.primary,
@@ -366,7 +365,7 @@ class _ChildProfileCreationState extends State<ChildProfileCreation>
               borderRadius: BorderRadius.circular(12),
               border: Border.all(
                 color: AppTheme.lightTheme.colorScheme.outline
-                    .withValues(alpha: 0.3),
+                    .withOpacity(0.3),
               ),
             ),
             child: Column(
@@ -410,10 +409,10 @@ class _ChildProfileCreationState extends State<ChildProfileCreation>
                   data: SliderTheme.of(context).copyWith(
                     activeTrackColor: AppTheme.lightTheme.colorScheme.primary,
                     inactiveTrackColor: AppTheme.lightTheme.colorScheme.primary
-                        .withValues(alpha: 0.3),
+                        .withOpacity(0.3),
                     thumbColor: AppTheme.lightTheme.colorScheme.primary,
                     overlayColor: AppTheme.lightTheme.colorScheme.primary
-                        .withValues(alpha: 0.2),
+                        .withOpacity(0.2),
                     trackHeight: 4,
                     thumbShape:
                         const RoundSliderThumbShape(enabledThumbRadius: 12),
@@ -462,14 +461,14 @@ class _ChildProfileCreationState extends State<ChildProfileCreation>
                     padding: EdgeInsets.symmetric(vertical: 3.h),
                     decoration: BoxDecoration(
                       color: isSelected
-                          ? option['color'].withValues(alpha: 0.1)
+                          ? option['color'].withOpacity(0.1)
                           : AppTheme.lightTheme.colorScheme.surface,
                       borderRadius: BorderRadius.circular(12),
                       border: Border.all(
                         color: isSelected
                             ? option['color']
                             : AppTheme.lightTheme.colorScheme.outline
-                                .withValues(alpha: 0.3),
+                                .withOpacity(0.3),
                         width: isSelected ? 2 : 1,
                       ),
                     ),
@@ -690,7 +689,7 @@ class _ChildProfileCreationState extends State<ChildProfileCreation>
                 color: AppTheme.lightTheme.colorScheme.surface,
                 boxShadow: [
                   BoxShadow(
-                    color: Colors.black.withValues(alpha: 0.05),
+                    color: Colors.black.withOpacity(0.05),
                     offset: const Offset(0, -2),
                     blurRadius: 8,
                     spreadRadius: 0,

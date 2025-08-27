@@ -99,8 +99,8 @@ class ChildProfileCard extends StatelessWidget {
                   )
                 : Container(
                     color: isDark
-                        ? AppTheme.primaryDark.withValues(alpha: 0.2)
-                        : AppTheme.primaryLight.withValues(alpha: 0.2),
+                        ? AppTheme.primaryDark.withOpacity(0.2)
+                        : AppTheme.primaryLight.withOpacity(0.2),
                     child: Center(
                       child: Text(
                         (childData["name"] as String)
@@ -224,8 +224,8 @@ class ChildProfileCard extends StatelessWidget {
             padding: EdgeInsets.symmetric(horizontal: 3.w, vertical: 1.h),
             decoration: BoxDecoration(
               color: isDark
-                  ? AppTheme.secondaryDark.withValues(alpha: 0.2)
-                  : AppTheme.secondaryLight.withValues(alpha: 0.2),
+                  ? AppTheme.secondaryDark.withOpacity(0.2)
+                  : AppTheme.secondaryLight.withOpacity(0.2),
               borderRadius: BorderRadius.circular(20),
             ),
             child: Row(
@@ -263,8 +263,8 @@ class ChildProfileCard extends StatelessWidget {
                       EdgeInsets.symmetric(horizontal: 2.w, vertical: 0.5.h),
                   decoration: BoxDecoration(
                     color: isDark
-                        ? AppTheme.accentDark.withValues(alpha: 0.2)
-                        : AppTheme.accentLight.withValues(alpha: 0.2),
+                        ? AppTheme.accentDark.withOpacity(0.2)
+                        : AppTheme.accentLight.withOpacity(0.2),
                     borderRadius: BorderRadius.circular(16),
                   ),
                   child: Row(
@@ -305,8 +305,8 @@ class ChildProfileCard extends StatelessWidget {
       margin: EdgeInsets.symmetric(horizontal: 4.w, vertical: 1.h),
       decoration: BoxDecoration(
         color: isDark
-            ? AppTheme.primaryDark.withValues(alpha: 0.2)
-            : AppTheme.primaryLight.withValues(alpha: 0.2),
+            ? AppTheme.primaryDark.withOpacity(0.2)
+            : AppTheme.primaryLight.withOpacity(0.2),
         borderRadius: BorderRadius.circular(16),
       ),
       child: Padding(
