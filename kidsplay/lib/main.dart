@@ -2,11 +2,21 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:sizer/sizer.dart';
 
+import 'package:firebase_core/firebase_core.dart';
+// If this file is inside a subfolder (as your other imports suggest), keep the "../" below.
+// If your file is at lib/main.dart, change this to: import 'firebase_options.dart';
+import '../firebase_options.dart';
+
 import '../core/app_export.dart';
 import '../widgets/custom_error_widget.dart';
 
-void main() async {
+Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
+
+  // Initialize Firebase (required before runApp)
+  await Firebase.initializeApp(
+    options: DefaultFirebaseOptions.currentPlatform,
+  );
 
   // 🚨 CRITICAL: Custom error handling - DO NOT REMOVE
   ErrorWidget.builder = (FlutterErrorDetails details) {
@@ -14,12 +24,11 @@ void main() async {
       errorDetails: details,
     );
   };
+
   // 🚨 CRITICAL: Device orientation lock - DO NOT REMOVE
-  Future.wait([
-    SystemChrome.setPreferredOrientations([DeviceOrientation.portraitUp])
-  ]).then((value) {
-    runApp(MyApp());
-  });
+  await SystemChrome.setPreferredOrientations([DeviceOrientation.portraitUp]);
+
+  runApp(MyApp());
 }
 
 class MyApp extends StatelessWidget {

@@ -1,6 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:sizer/sizer.dart';
 import '../../widgets/custom_app_bar.dart';
+import '../../services/auth_service.dart';
+import '../../repositories/parent_repository.dart';
+import '../../repositories/child_repository.dart';
+import '../../repositories/invitation_repository.dart';
+import '../../models/parent.dart';
+import '../../models/child.dart';
+import '../../models/invitation.dart';
 
 class MultiParentScreen extends StatefulWidget {
   const MultiParentScreen({Key? key}) : super(key: key);
@@ -12,15 +19,35 @@ class MultiParentScreen extends StatefulWidget {
 class _MultiParentScreenState extends State<MultiParentScreen>
     with TickerProviderStateMixin {
   late TabController _tabController;
-  List<Parent> _parents = [];
-  List<SharedChild> _sharedChildren = [];
-  List<Invitation> _pendingInvitations = [];
+  final _parentRepo = ParentRepository();
+  final _childRepo = ChildRepository();
+  final _invRepo = InvitationRepository();
+
+  String? _uid;
+  String? _invitedByName; // could be fetched from user profile
+  List<Child> _children = [];
 
   @override
   void initState() {
     super.initState();
     _tabController = TabController(length: 3, vsync: this);
-    _loadData();
+    _tabController
+        .addListener(() => setState(() {})); // update FAB on tab switch
+    _bootstrap();
+  }
+
+  Future<void> _bootstrap() async {
+    final user = await AuthService.ensureInitializedAndSignedIn();
+    setState(() {
+      _uid = user.uid;
+      _invitedByName = 'You'; // replace with profile name if available
+    });
+    // prefetch children for invite dialog convenience
+    _childRepo.watchChildrenOf(user.uid).listen((chs) {
+      setState(() {
+        _children = chs;
+      });
+    });
   }
 
   @override
@@ -29,68 +56,15 @@ class _MultiParentScreenState extends State<MultiParentScreen>
     super.dispose();
   }
 
-  void _loadData() {
-    // Mock data - in real app, this would come from Firestore
-    _parents = [
-      Parent(
-        id: '1',
-        name: 'Ayşe Yılmaz',
-        email: 'ayse@example.com',
-        relationship: 'Mother',
-        profileImageUrl: 'https://example.com/ayse.jpg',
-        isPrimary: true,
-        permissions: ['view', 'edit', 'invite', 'delete'],
-        joinedAt: DateTime.now().subtract(const Duration(days: 30)),
-      ),
-      Parent(
-        id: '2',
-        name: 'Mehmet Yılmaz',
-        email: 'mehmet@example.com',
-        relationship: 'Father',
-        profileImageUrl: 'https://example.com/mehmet.jpg',
-        isPrimary: false,
-        permissions: ['view', 'edit'],
-        joinedAt: DateTime.now().subtract(const Duration(days: 15)),
-      ),
-    ];
-
-    _sharedChildren = [
-      SharedChild(
-        id: '1',
-        childId: 'child1',
-        childName: 'Elif Yılmaz',
-        childAge: 4,
-        parentIds: ['1', '2'],
-        sharedAt: DateTime.now().subtract(const Duration(days: 20)),
-        permissions: ['view', 'edit', 'progress'],
-      ),
-      SharedChild(
-        id: '2',
-        childId: 'child2',
-        childName: 'Can Yılmaz',
-        childAge: 2,
-        parentIds: ['1', '2'],
-        sharedAt: DateTime.now().subtract(const Duration(days: 10)),
-        permissions: ['view', 'edit', 'progress'],
-      ),
-    ];
-
-    _pendingInvitations = [
-      Invitation(
-        id: '1',
-        email: 'grandma@example.com',
-        invitedBy: 'Ayşe Yılmaz',
-        childName: 'Elif Yılmaz',
-        permissions: ['view', 'progress'],
-        sentAt: DateTime.now().subtract(const Duration(days: 2)),
-        expiresAt: DateTime.now().add(const Duration(days: 5)),
-      ),
-    ];
-  }
-
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    if (_uid == null) {
+      return const Scaffold(
+        body: Center(child: CircularProgressIndicator()),
+      );
+    }
+
     return Scaffold(
       backgroundColor: theme.colorScheme.background,
       appBar: CustomAppBar(
@@ -165,11 +139,25 @@ class _MultiParentScreenState extends State<MultiParentScreen>
   }
 
   Widget _buildParentsTab(ThemeData theme) {
-    return ListView.builder(
-      padding: EdgeInsets.all(4.w),
-      itemCount: _parents.length,
-      itemBuilder: (context, index) {
-        return _buildParentCard(theme, _parents[index]);
+    return StreamBuilder(
+      stream: _parentRepo.watchParents(_uid!),
+      builder: (context, AsyncSnapshot<List<Parent>> snap) {
+        if (!snap.hasData) {
+          return const Center(child: CircularProgressIndicator());
+        }
+        final parents = snap.data!;
+        if (parents.isEmpty) {
+          return Center(
+            child: Text('No parents yet', style: theme.textTheme.bodyMedium),
+          );
+        }
+        return ListView.builder(
+          padding: EdgeInsets.all(4.w),
+          itemCount: parents.length,
+          itemBuilder: (context, index) {
+            return _buildParentCard(theme, parents[index]);
+          },
+        );
       },
     );
   }
@@ -202,7 +190,7 @@ class _MultiParentScreenState extends State<MultiParentScreen>
                 backgroundColor: theme.colorScheme.primary.withOpacity(0.1),
                 child: parent.profileImageUrl.isEmpty
                     ? Text(
-                        parent.name[0],
+                        parent.name.isNotEmpty ? parent.name[0] : '?',
                         style: theme.textTheme.titleLarge?.copyWith(
                           fontWeight: FontWeight.bold,
                           color: theme.colorScheme.primary,
@@ -262,8 +250,8 @@ class _MultiParentScreenState extends State<MultiParentScreen>
               if (!parent.isPrimary)
                 PopupMenuButton<String>(
                   onSelected: (value) => _handleParentAction(value, parent),
-                  itemBuilder: (context) => [
-                    const PopupMenuItem(
+                  itemBuilder: (context) => const [
+                    PopupMenuItem(
                       value: 'edit',
                       child: Row(
                         children: [
@@ -273,7 +261,7 @@ class _MultiParentScreenState extends State<MultiParentScreen>
                         ],
                       ),
                     ),
-                    const PopupMenuItem(
+                    PopupMenuItem(
                       value: 'permissions',
                       child: Row(
                         children: [
@@ -283,7 +271,7 @@ class _MultiParentScreenState extends State<MultiParentScreen>
                         ],
                       ),
                     ),
-                    const PopupMenuItem(
+                    PopupMenuItem(
                       value: 'remove',
                       child: Row(
                         children: [
@@ -344,16 +332,34 @@ class _MultiParentScreenState extends State<MultiParentScreen>
   }
 
   Widget _buildSharedChildrenTab(ThemeData theme) {
-    return ListView.builder(
-      padding: EdgeInsets.all(4.w),
-      itemCount: _sharedChildren.length,
-      itemBuilder: (context, index) {
-        return _buildSharedChildCard(theme, _sharedChildren[index]);
+    return StreamBuilder<List<Child>>(
+      stream: _childRepo.watchChildrenOf(_uid!),
+      builder: (context, snap) {
+        if (!snap.hasData) {
+          return const Center(child: CircularProgressIndicator());
+        }
+        final children = snap.data!;
+        final shared = children.where((c) => c.parentIds.length > 1).toList();
+        if (shared.isEmpty) {
+          return Center(
+              child: Text('No shared children',
+                  style: theme.textTheme.bodyMedium));
+        }
+        return ListView.builder(
+          padding: EdgeInsets.all(4.w),
+          itemCount: shared.length,
+          itemBuilder: (context, i) => _buildSharedChildCard(theme, shared[i]),
+        );
       },
     );
   }
 
-  Widget _buildSharedChildCard(ThemeData theme, SharedChild sharedChild) {
+  Widget _buildSharedChildCard(ThemeData theme, Child child) {
+    final permissions = <String>[
+      'view',
+      'edit',
+      'progress'
+    ]; // demo: could be stored per parent-child
     return Container(
       margin: EdgeInsets.only(bottom: 2.h),
       padding: EdgeInsets.all(4.w),
@@ -377,7 +383,7 @@ class _MultiParentScreenState extends State<MultiParentScreen>
                 radius: 8.w,
                 backgroundColor: theme.colorScheme.primary.withOpacity(0.1),
                 child: Text(
-                  sharedChild.childName[0],
+                  child.name.isNotEmpty ? child.name[0] : '?',
                   style: theme.textTheme.titleLarge?.copyWith(
                     fontWeight: FontWeight.bold,
                     color: theme.colorScheme.primary,
@@ -390,20 +396,20 @@ class _MultiParentScreenState extends State<MultiParentScreen>
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      sharedChild.childName,
+                      '${child.name} ${child.surname}',
                       style: theme.textTheme.titleMedium?.copyWith(
                         fontWeight: FontWeight.w600,
                         color: theme.colorScheme.onSurface,
                       ),
                     ),
                     Text(
-                      '${sharedChild.childAge} years old',
+                      '${_age(child.birthDate)} years old',
                       style: theme.textTheme.bodyMedium?.copyWith(
                         color: theme.colorScheme.onSurface.withOpacity(0.7),
                       ),
                     ),
                     Text(
-                      'Shared by ${sharedChild.parentIds.length} parents',
+                      'Shared by ${child.parentIds.length} parents',
                       style: theme.textTheme.bodySmall?.copyWith(
                         color: theme.colorScheme.onSurface.withOpacity(0.5),
                       ),
@@ -412,10 +418,9 @@ class _MultiParentScreenState extends State<MultiParentScreen>
                 ),
               ),
               PopupMenuButton<String>(
-                onSelected: (value) =>
-                    _handleSharedChildAction(value, sharedChild),
-                itemBuilder: (context) => [
-                  const PopupMenuItem(
+                onSelected: (value) => _handleSharedChildAction(value, child),
+                itemBuilder: (context) => const [
+                  PopupMenuItem(
                     value: 'view_progress',
                     child: Row(
                       children: [
@@ -425,7 +430,7 @@ class _MultiParentScreenState extends State<MultiParentScreen>
                       ],
                     ),
                   ),
-                  const PopupMenuItem(
+                  PopupMenuItem(
                     value: 'manage_permissions',
                     child: Row(
                       children: [
@@ -466,7 +471,7 @@ class _MultiParentScreenState extends State<MultiParentScreen>
           Wrap(
             spacing: 2.w,
             runSpacing: 1.h,
-            children: sharedChild.permissions.map((permission) {
+            children: permissions.map((permission) {
               return Container(
                 padding: EdgeInsets.symmetric(horizontal: 2.w, vertical: 0.5.h),
                 decoration: BoxDecoration(
@@ -483,63 +488,53 @@ class _MultiParentScreenState extends State<MultiParentScreen>
               );
             }).toList(),
           ),
-          SizedBox(height: 1.h),
-          Text(
-            'Shared: ${_formatDate(sharedChild.sharedAt)}',
-            style: theme.textTheme.bodySmall?.copyWith(
-              color: theme.colorScheme.onSurface.withOpacity(0.5),
-            ),
-          ),
         ],
       ),
     );
   }
 
   Widget _buildInvitationsTab(ThemeData theme) {
-    if (_pendingInvitations.isEmpty) {
-      return Center(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Icon(
-              Icons.email_outlined,
-              size: 64.sp,
-              color: theme.colorScheme.onSurface.withOpacity(0.2),
+    return StreamBuilder<List<Invitation>>(
+      stream: _invRepo.watchInvitations(_uid!),
+      builder: (context, snap) {
+        if (!snap.hasData)
+          return const Center(child: CircularProgressIndicator());
+        final invitations = snap.data!;
+        if (invitations.isEmpty) {
+          return Center(
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Icon(Icons.email_outlined,
+                    size: 64.sp,
+                    color: theme.colorScheme.onSurface.withOpacity(0.2)),
+                SizedBox(height: 2.h),
+                Text('No pending invitations',
+                    style: theme.textTheme.titleMedium?.copyWith(
+                        fontWeight: FontWeight.w600,
+                        color: theme.colorScheme.onSurface.withOpacity(0.5))),
+                SizedBox(height: 1.h),
+                Text('Use the "Invite Parent" button to send a new invitation',
+                    style: theme.textTheme.bodyMedium?.copyWith(
+                        color: theme.colorScheme.onSurface.withOpacity(0.5)),
+                    textAlign: TextAlign.center),
+              ],
             ),
-            SizedBox(height: 2.h),
-            Text(
-              'No pending invitations',
-              style: theme.textTheme.titleMedium?.copyWith(
-                fontWeight: FontWeight.w600,
-                color: theme.colorScheme.onSurface.withOpacity(0.5),
-              ),
-            ),
-            SizedBox(height: 1.h),
-            Text(
-              'Use the "Invite Parent" button to send a new invitation',
-              style: theme.textTheme.bodyMedium?.copyWith(
-                color: theme.colorScheme.onSurface.withOpacity(0.5),
-              ),
-              textAlign: TextAlign.center,
-            ),
-          ],
-        ),
-      );
-    }
-
-    return ListView.builder(
-      padding: EdgeInsets.all(4.w),
-      itemCount: _pendingInvitations.length,
-      itemBuilder: (context, index) {
-        return _buildInvitationCard(theme, _pendingInvitations[index]);
+          );
+        }
+        return ListView.builder(
+          padding: EdgeInsets.all(4.w),
+          itemCount: invitations.length,
+          itemBuilder: (context, i) =>
+              _buildInvitationCard(theme, invitations[i]),
+        );
       },
     );
   }
 
-  Widget _buildInvitationCard(ThemeData theme, Invitation invitation) {
-    final daysLeft = invitation.expiresAt.difference(DateTime.now()).inDays;
-    final isExpired = daysLeft < 0;
-
+  Widget _buildInvitationCard(ThemeData theme, Invitation inv) {
+    final daysLeft = inv.expiresAt.difference(DateTime.now()).inDays;
+    final isExpired = daysLeft < 0 || inv.status == 'expired';
     return Container(
       margin: EdgeInsets.only(bottom: 2.h),
       padding: EdgeInsets.all(4.w),
@@ -548,10 +543,9 @@ class _MultiParentScreenState extends State<MultiParentScreen>
         borderRadius: BorderRadius.circular(12),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.05),
-            blurRadius: 8,
-            offset: const Offset(0, 2),
-          ),
+              color: Colors.black.withOpacity(0.05),
+              blurRadius: 8,
+              offset: const Offset(0, 2)),
         ],
       ),
       child: Column(
@@ -562,142 +556,103 @@ class _MultiParentScreenState extends State<MultiParentScreen>
               CircleAvatar(
                 radius: 8.w,
                 backgroundColor: theme.colorScheme.primary.withOpacity(0.1),
-                child: Icon(
-                  Icons.email,
-                  color: theme.colorScheme.primary,
-                  size: 20.sp,
-                ),
+                child: Icon(Icons.email,
+                    color: theme.colorScheme.primary, size: 20.sp),
               ),
               SizedBox(width: 3.w),
               Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text(
-                      invitation.email,
-                      style: theme.textTheme.titleMedium?.copyWith(
-                        fontWeight: FontWeight.w600,
-                        color: theme.colorScheme.onSurface,
-                      ),
-                    ),
-                    Text(
-                      'Invited by: ${invitation.invitedBy}',
-                      style: theme.textTheme.bodyMedium?.copyWith(
-                        color: theme.colorScheme.onSurface.withOpacity(0.7),
-                      ),
-                    ),
-                    Text(
-                      'Child: ${invitation.childName}',
-                      style: theme.textTheme.bodySmall?.copyWith(
-                        color: theme.colorScheme.onSurface.withOpacity(0.5),
-                      ),
-                    ),
+                    Text(inv.email,
+                        style: theme.textTheme.titleMedium?.copyWith(
+                            fontWeight: FontWeight.w600,
+                            color: theme.colorScheme.onSurface)),
+                    Text('Invited by: ${inv.invitedBy}',
+                        style: theme.textTheme.bodyMedium?.copyWith(
+                            color:
+                                theme.colorScheme.onSurface.withOpacity(0.7))),
+                    Text('Child: ${inv.childName}',
+                        style: theme.textTheme.bodySmall?.copyWith(
+                            color:
+                                theme.colorScheme.onSurface.withOpacity(0.5))),
                   ],
                 ),
               ),
-              if (isExpired)
-                Container(
-                  padding:
-                      EdgeInsets.symmetric(horizontal: 2.w, vertical: 0.5.h),
-                  decoration: BoxDecoration(
-                    color: const Color(0xFFD67B7B).withOpacity(0.1),
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                  child: Text(
-                    'Expired',
-                    style: theme.textTheme.labelSmall?.copyWith(
-                      fontWeight: FontWeight.w600,
-                      color: const Color(0xFFD67B7B),
-                    ),
-                  ),
-                )
-              else
-                Container(
-                  padding:
-                      EdgeInsets.symmetric(horizontal: 2.w, vertical: 0.5.h),
-                  decoration: BoxDecoration(
-                    color: const Color(0xFFFF9800).withOpacity(0.1),
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                  child: Text(
-                    '$daysLeft days left',
-                    style: theme.textTheme.labelSmall?.copyWith(
-                      fontWeight: FontWeight.w600,
-                      color: const Color(0xFFFF9800),
-                    ),
+              Container(
+                padding: EdgeInsets.symmetric(horizontal: 2.w, vertical: 0.5.h),
+                decoration: BoxDecoration(
+                  color: isExpired
+                      ? const Color(0xFFD67B7B).withOpacity(0.1)
+                      : const Color(0xFFFF9800).withOpacity(0.1),
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: Text(
+                  isExpired ? 'Expired' : '$daysLeft days left',
+                  style: theme.textTheme.labelSmall?.copyWith(
+                    fontWeight: FontWeight.w600,
+                    color: isExpired
+                        ? const Color(0xFFD67B7B)
+                        : const Color(0xFFFF9800),
                   ),
                 ),
+              ),
             ],
           ),
           SizedBox(height: 2.h),
-          Text(
-            'Permissions',
-            style: theme.textTheme.titleMedium?.copyWith(
-              fontWeight: FontWeight.w600,
-              color: theme.colorScheme.onSurface,
-            ),
-          ),
+          Text('Permissions',
+              style: theme.textTheme.titleMedium?.copyWith(
+                  fontWeight: FontWeight.w600,
+                  color: theme.colorScheme.onSurface)),
           SizedBox(height: 1.h),
           Wrap(
             spacing: 2.w,
             runSpacing: 1.h,
-            children: invitation.permissions.map((permission) {
-              return Container(
-                padding: EdgeInsets.symmetric(horizontal: 2.w, vertical: 0.5.h),
-                decoration: BoxDecoration(
-                  color: theme.colorScheme.primary.withOpacity(0.1),
-                  borderRadius: BorderRadius.circular(12),
-                ),
-                child: Text(
-                  _getPermissionText(permission),
-                  style: theme.textTheme.labelSmall?.copyWith(
-                    fontWeight: FontWeight.w600,
-                    color: theme.colorScheme.primary,
-                  ),
-                ),
-              );
-            }).toList(),
+            children: inv.permissions
+                .map((p) => Container(
+                      padding: EdgeInsets.symmetric(
+                          horizontal: 2.w, vertical: 0.5.h),
+                      decoration: BoxDecoration(
+                          color: theme.colorScheme.primary.withOpacity(0.1),
+                          borderRadius: BorderRadius.circular(12)),
+                      child: Text(_getPermissionText(p),
+                          style: theme.textTheme.labelSmall?.copyWith(
+                              fontWeight: FontWeight.w600,
+                              color: theme.colorScheme.primary)),
+                    ))
+                .toList(),
           ),
           SizedBox(height: 2.h),
-          if (!isExpired)
+          if (!isExpired && inv.status == 'pending')
             Row(
               children: [
                 Expanded(
                   child: OutlinedButton(
-                    onPressed: () => _resendInvitation(invitation),
+                    onPressed: () => _resendInvitation(inv),
                     style: OutlinedButton.styleFrom(
                       side: BorderSide(
                           color: Theme.of(context).colorScheme.primary),
                       shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(8),
-                      ),
+                          borderRadius: BorderRadius.circular(8)),
                     ),
-                    child: Text(
-                      'Resend',
-                      style: theme.textTheme.bodyMedium?.copyWith(
-                        color: theme.colorScheme.primary,
-                        fontWeight: FontWeight.w600,
-                      ),
-                    ),
+                    child: Text('Resend',
+                        style: theme.textTheme.bodyMedium?.copyWith(
+                            color: theme.colorScheme.primary,
+                            fontWeight: FontWeight.w600)),
                   ),
                 ),
                 SizedBox(width: 2.w),
                 Expanded(
                   child: ElevatedButton(
-                    onPressed: () => _cancelInvitation(invitation),
+                    onPressed: () => _cancelInvitation(inv),
                     style: ElevatedButton.styleFrom(
                       backgroundColor: const Color(0xFFD67B7B),
                       shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(8),
-                      ),
+                          borderRadius: BorderRadius.circular(8)),
                     ),
-                    child: Text(
-                      'Cancel',
-                      style: theme.textTheme.bodyMedium?.copyWith(
-                        color: Colors.white,
-                        fontWeight: FontWeight.w600,
-                      ),
-                    ),
+                    child: Text('Cancel',
+                        style: theme.textTheme.bodyMedium?.copyWith(
+                            color: Colors.white, fontWeight: FontWeight.w600)),
                   ),
                 ),
               ],
@@ -709,53 +664,103 @@ class _MultiParentScreenState extends State<MultiParentScreen>
 
   void _showInviteParentDialog() {
     final theme = Theme.of(context);
+    final emailCtrl = TextEditingController();
+    final relCtrl = TextEditingController();
+    String? selectedChildId = _children.isNotEmpty ? _children.first.id : null;
+    final perms = <String, bool>{
+      'view': true,
+      'edit': true,
+      'progress': true,
+      'invite': false,
+      'delete': false
+    };
+
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
         title: Text('Invite Parent',
             style: theme.textTheme.titleMedium
                 ?.copyWith(fontWeight: FontWeight.bold)),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            TextField(
-              decoration: InputDecoration(
-                labelText: 'Email address',
-                border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(8),
-                ),
+        content: SingleChildScrollView(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              DropdownButtonFormField<String>(
+                value: selectedChildId,
+                items: _children
+                    .map((c) => DropdownMenuItem(
+                        value: c.id, child: Text('${c.name} ${c.surname}')))
+                    .toList(),
+                onChanged: (v) => selectedChildId = v,
+                decoration: InputDecoration(
+                    labelText: 'Child',
+                    border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(8))),
               ),
-            ),
-            SizedBox(height: 2.h),
-            TextField(
-              decoration: InputDecoration(
-                labelText: 'Relationship (e.g. Mother, Father, Guardian)',
-                border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(8),
-                ),
+              SizedBox(height: 1.5.h),
+              TextField(
+                controller: emailCtrl,
+                decoration: InputDecoration(
+                    labelText: 'Email address',
+                    border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(8))),
+                keyboardType: TextInputType.emailAddress,
               ),
-            ),
-            SizedBox(height: 2.h),
-            Text('Permissions', style: theme.textTheme.titleSmall),
-            SizedBox(height: 1.h),
-            // permission checkboxes can be added here
-          ],
+              SizedBox(height: 1.5.h),
+              TextField(
+                controller: relCtrl,
+                decoration: InputDecoration(
+                    labelText: 'Relationship (e.g. Mother, Father, Guardian)',
+                    border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(8))),
+              ),
+              SizedBox(height: 1.5.h),
+              Align(
+                alignment: Alignment.centerLeft,
+                child: Text('Permissions',
+                    style: theme.textTheme.titleSmall
+                        ?.copyWith(fontWeight: FontWeight.w600)),
+              ),
+              SizedBox(height: 0.5.h),
+              ...perms.keys.map((k) => CheckboxListTile(
+                    contentPadding: EdgeInsets.zero,
+                    dense: true,
+                    value: perms[k],
+                    title: Text(_getPermissionText(k)),
+                    onChanged: (v) => {perms[k] = v ?? false, setState(() {})},
+                  )),
+            ],
+          ),
         ),
         actions: [
           TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: Text('Cancel',
-                style: theme.textTheme.bodyMedium?.copyWith(
-                    color: theme.colorScheme.onSurface.withOpacity(0.7))),
-          ),
+              onPressed: () => Navigator.pop(context),
+              child: Text('Cancel', style: theme.textTheme.bodyMedium)),
           ElevatedButton(
-            onPressed: () {
-              // Send invitation logic
-              Navigator.pop(context);
+            onPressed: () async {
+              if (selectedChildId == null || emailCtrl.text.trim().isEmpty)
+                return;
+              final child =
+                  _children.firstWhere((c) => c.id == selectedChildId);
+              await _invRepo.invite(
+                uid: _uid!,
+                email: emailCtrl.text.trim(),
+                invitedBy: _invitedByName ?? 'You',
+                childId: child.id,
+                childName: '${child.name} ${child.surname}',
+                permissions: perms.entries
+                    .where((e) => e.value)
+                    .map((e) => e.key)
+                    .toList(),
+              );
+              if (mounted) Navigator.pop(context);
+              if (mounted) {
+                ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(content: Text('Invitation sent')));
+              }
             },
             style: ElevatedButton.styleFrom(
-              backgroundColor: theme.colorScheme.primary,
-            ),
+                backgroundColor: theme.colorScheme.primary),
             child: Text('Send Invitation',
                 style:
                     theme.textTheme.bodyMedium?.copyWith(color: Colors.white)),
@@ -768,10 +773,10 @@ class _MultiParentScreenState extends State<MultiParentScreen>
   void _handleParentAction(String action, Parent parent) {
     switch (action) {
       case 'edit':
-        // Show edit parent dialog
+        // TODO: Implement edit parent dialog (name/relationship)
         break;
       case 'permissions':
-        // Show permissions dialog
+        // TODO: Implement per-parent permission management
         break;
       case 'remove':
         _showRemoveParentDialog(parent);
@@ -779,16 +784,16 @@ class _MultiParentScreenState extends State<MultiParentScreen>
     }
   }
 
-  void _handleSharedChildAction(String action, SharedChild sharedChild) {
+  void _handleSharedChildAction(String action, Child child) {
     switch (action) {
       case 'view_progress':
-        // Navigate to progress screen
+        // TODO: Navigate to actual progress screen
         break;
       case 'manage_permissions':
-        // Show permissions dialog
+        // TODO: Implement permissions for this child
         break;
       case 'remove_sharing':
-        _showRemoveSharingDialog(sharedChild);
+        _showRemoveSharingDialog(child);
         break;
     }
   }
@@ -805,19 +810,19 @@ class _MultiParentScreenState extends State<MultiParentScreen>
             style: theme.textTheme.bodyMedium),
         actions: [
           TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: Text('Cancel',
-                style: theme.textTheme.bodyMedium?.copyWith(
-                    color: theme.colorScheme.onSurface.withOpacity(0.7))),
-          ),
+              onPressed: () => Navigator.pop(context),
+              child: Text('Cancel', style: theme.textTheme.bodyMedium)),
           ElevatedButton(
-            onPressed: () {
-              // Remove parent logic
-              Navigator.pop(context);
+            onPressed: () async {
+              await _parentRepo.removeParent(_uid!, parent.id);
+              if (mounted) Navigator.pop(context);
+              if (mounted) {
+                ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(content: Text('Parent removed')));
+              }
             },
             style: ElevatedButton.styleFrom(
-              backgroundColor: const Color(0xFFD67B7B),
-            ),
+                backgroundColor: const Color(0xFFD67B7B)),
             child: Text('Remove',
                 style:
                     theme.textTheme.bodyMedium?.copyWith(color: Colors.white)),
@@ -827,7 +832,7 @@ class _MultiParentScreenState extends State<MultiParentScreen>
     );
   }
 
-  void _showRemoveSharingDialog(SharedChild sharedChild) {
+  void _showRemoveSharingDialog(Child child) {
     final theme = Theme.of(context);
     showDialog(
       context: context,
@@ -836,23 +841,24 @@ class _MultiParentScreenState extends State<MultiParentScreen>
             style: theme.textTheme.titleMedium
                 ?.copyWith(fontWeight: FontWeight.bold)),
         content: Text(
-            'Are you sure you want to remove sharing for ${sharedChild.childName}?',
+            'Remove sharing for ${child.name} ${child.surname}? This will keep the child only under your account.',
             style: theme.textTheme.bodyMedium),
         actions: [
           TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: Text('Cancel',
-                style: theme.textTheme.bodyMedium?.copyWith(
-                    color: theme.colorScheme.onSurface.withOpacity(0.7))),
-          ),
+              onPressed: () => Navigator.pop(context),
+              child: Text('Cancel', style: theme.textTheme.bodyMedium)),
           ElevatedButton(
-            onPressed: () {
-              // Remove sharing logic
-              Navigator.pop(context);
+            onPressed: () async {
+              await _childRepo.removeSharingKeepOwner(
+                  ownerUid: _uid!, childId: child.id);
+              if (mounted) Navigator.pop(context);
+              if (mounted) {
+                ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(content: Text('Sharing removed')));
+              }
             },
             style: ElevatedButton.styleFrom(
-              backgroundColor: const Color(0xFFD67B7B),
-            ),
+                backgroundColor: const Color(0xFFD67B7B)),
             child: Text('Remove',
                 style:
                     theme.textTheme.bodyMedium?.copyWith(color: Colors.white)),
@@ -862,29 +868,18 @@ class _MultiParentScreenState extends State<MultiParentScreen>
     );
   }
 
-  void _resendInvitation(Invitation invitation) {
-    // Resend invitation logic
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text('Invitation resent',
-            style: Theme.of(context).textTheme.bodyMedium),
-        backgroundColor: const Color(0xFF4CAF50),
-      ),
-    );
+  Future<void> _resendInvitation(Invitation inv) async {
+    await _invRepo.resend(_uid!, inv.id);
+    if (!mounted) return;
+    ScaffoldMessenger.of(context)
+        .showSnackBar(const SnackBar(content: Text('Invitation resent')));
   }
 
-  void _cancelInvitation(Invitation invitation) {
-    // Cancel invitation logic
-    setState(() {
-      _pendingInvitations.remove(invitation);
-    });
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text('Invitation cancelled',
-            style: Theme.of(context).textTheme.bodyMedium),
-        backgroundColor: const Color(0xFFD67B7B),
-      ),
-    );
+  Future<void> _cancelInvitation(Invitation inv) async {
+    await _invRepo.cancel(_uid!, inv.id);
+    if (!mounted) return;
+    ScaffoldMessenger.of(context)
+        .showSnackBar(const SnackBar(content: Text('Invitation cancelled')));
   }
 
   String _getPermissionText(String permission) {
@@ -907,77 +902,18 @@ class _MultiParentScreenState extends State<MultiParentScreen>
   String _formatDate(DateTime date) {
     final now = DateTime.now();
     final difference = now.difference(date);
-
-    if (difference.inDays == 0) {
-      return 'Today';
-    } else if (difference.inDays == 1) {
-      return 'Yesterday';
-    } else if (difference.inDays < 7) {
-      return '${difference.inDays} days ago';
-    } else {
-      return '${date.day}/${date.month}/${date.year}';
-    }
+    if (difference.inDays == 0) return 'Today';
+    if (difference.inDays == 1) return 'Yesterday';
+    if (difference.inDays < 7) return '${difference.inDays} days ago';
+    return '${date.day}/${date.month}/${date.year}';
   }
-}
 
-class Parent {
-  final String id;
-  final String name;
-  final String email;
-  final String relationship;
-  final String profileImageUrl;
-  final bool isPrimary;
-  final List<String> permissions;
-  final DateTime joinedAt;
-
-  Parent({
-    required this.id,
-    required this.name,
-    required this.email,
-    required this.relationship,
-    required this.profileImageUrl,
-    required this.isPrimary,
-    required this.permissions,
-    required this.joinedAt,
-  });
-}
-
-class SharedChild {
-  final String id;
-  final String childId;
-  final String childName;
-  final int childAge;
-  final List<String> parentIds;
-  final DateTime sharedAt;
-  final List<String> permissions;
-
-  SharedChild({
-    required this.id,
-    required this.childId,
-    required this.childName,
-    required this.childAge,
-    required this.parentIds,
-    required this.sharedAt,
-    required this.permissions,
-  });
-}
-
-class Invitation {
-  final String id;
-  final String email;
-  final String invitedBy;
-  final String childName;
-  final List<String> permissions;
-  final DateTime sentAt;
-  final DateTime expiresAt;
-
-  Invitation({
-    required this.id,
-    required this.email,
-    required this.invitedBy,
-    required this.childName,
-    required this.permissions,
-    required this.sentAt,
-    required this.expiresAt,
-  });
+  int _age(DateTime birthDate) {
+    int age = DateTime.now().year - birthDate.year;
+    final hasHadBirthday = (DateTime.now().month > birthDate.month) ||
+        (DateTime.now().month == birthDate.month &&
+            DateTime.now().day >= birthDate.day);
+    if (!hasHadBirthday) age--;
+    return age;
+  }
 }

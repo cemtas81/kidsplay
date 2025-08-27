@@ -1,8 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:sizer/sizer.dart';
 import '../../widgets/custom_app_bar.dart';
-import '../../core/activity_recommendation_engine.dart';
 import '../../theme/app_theme.dart';
+import '../../models/child.dart';
+import '../../models/subscription_plan.dart';
+import '../../services/auth_service.dart';
+import '../../repositories/child_repository.dart';
+import '../../repositories/subscription_repository.dart';
 
 class SubscriptionScreen extends StatefulWidget {
   const SubscriptionScreen({Key? key}) : super(key: key);
@@ -12,79 +16,46 @@ class SubscriptionScreen extends StatefulWidget {
 }
 
 class _SubscriptionScreenState extends State<SubscriptionScreen> {
+  final _childRepo = ChildRepository();
+  final _subRepo = SubscriptionRepository();
+
   String _selectedPlan = 'standard';
   String _voucherCode = '';
   bool _isVoucherValid = false;
+
+  String? _uid;
   List<Child> _children = [];
   SubscriptionPlan? _currentPlan;
 
   @override
   void initState() {
     super.initState();
-    _loadData();
+    _bootstrap();
   }
 
-  void _loadData() {
-    // Mock data - in real app, this would come from Firestore
-    _children = [
-      Child(
-        id: '1',
-        name: 'Elif',
-        surname: 'Yılmaz',
-        birthDate: DateTime(2020, 5, 15),
-        gender: 'female',
-        hobbies: ['drawing', 'music'],
-        hasScreenDependency: false,
-        screenDependencyLevel: 'low',
-        usesScreenDuringMeals: false,
-        wantsToChange: true,
-        dailyPlayTime: '1h',
-        parentIds: ['1'],
-        relationshipToParent: 'daughter',
-        hasCameraPermission: true,
-      ),
-      Child(
-        id: '2',
-        name: 'Can',
-        surname: 'Yılmaz',
-        birthDate: DateTime(2022, 3, 10),
-        gender: 'male',
-        hobbies: ['games', 'sports'],
-        hasScreenDependency: true,
-        screenDependencyLevel: 'high',
-        usesScreenDuringMeals: true,
-        wantsToChange: true,
-        dailyPlayTime: '2h',
-        parentIds: ['1'],
-        relationshipToParent: 'son',
-        hasCameraPermission: false,
-      ),
-    ];
+  Future<void> _bootstrap() async {
+    final user = await AuthService.ensureInitializedAndSignedIn();
+    setState(() {
+      _uid = user.uid;
+    });
 
-    _currentPlan = SubscriptionPlan(
-      id: 'standard',
-      name: 'Standard',
-      price: 7.99,
-      currency: 'USD',
-      period: 'month',
-      features: [
-        'Unlimited access to all activities',
-        'Development tracking and badges',
-        'Multi-parent management',
-        'Progress support',
-      ],
-      limitations: [
-        'No camera support',
-        'No live viewing',
-        'No video recording',
-      ],
-    );
+    _childRepo.watchChildrenOf(user.uid).listen((kids) {
+      setState(() => _children = kids);
+    });
+
+    _subRepo.watchCurrentPlan(user.uid).listen((plan) {
+      setState(() => _currentPlan = plan ?? SubscriptionPlan.byId('free'));
+    });
   }
 
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final isDark = theme.brightness == Brightness.dark;
+
+    if (_uid == null) {
+      return const Scaffold(body: Center(child: CircularProgressIndicator()));
+    }
 
     return Scaffold(
       backgroundColor:
@@ -139,12 +110,10 @@ class _SubscriptionScreenState extends State<SubscriptionScreen> {
         children: [
           Row(
             children: [
-              Icon(
-                Icons.star,
-                color:
-                    isDark ? AppTheme.onSurfaceDark : AppTheme.onSurfaceLight,
-                size: 24.sp,
-              ),
+              Icon(Icons.star,
+                  color:
+                      isDark ? AppTheme.onSurfaceDark : AppTheme.onSurfaceLight,
+                  size: 24.sp),
               SizedBox(width: 2.w),
               Expanded(
                 child: Text(
@@ -258,21 +227,17 @@ class _SubscriptionScreenState extends State<SubscriptionScreen> {
         borderRadius: BorderRadius.circular(12),
         boxShadow: [
           BoxShadow(
-            color: isDark ? AppTheme.shadowDark : AppTheme.shadowLight,
-            blurRadius: 8,
-            offset: const Offset(0, 2),
-          ),
+              color: isDark ? AppTheme.shadowDark : AppTheme.shadowLight,
+              blurRadius: 8,
+              offset: const Offset(0, 2)),
         ],
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(
-            'Children (${_children.length})',
-            style: theme.textTheme.titleMedium?.copyWith(
-              fontWeight: FontWeight.w600,
-            ),
-          ),
+          Text('Children (${_children.length})',
+              style: theme.textTheme.titleMedium
+                  ?.copyWith(fontWeight: FontWeight.w600)),
           SizedBox(height: 2.h),
           ..._children.map((child) => _buildChildItem(theme, child)),
         ],
@@ -280,116 +245,14 @@ class _SubscriptionScreenState extends State<SubscriptionScreen> {
     );
   }
 
-  Widget _buildDiscountInfo(ThemeData theme) {
-    double discount = 0.0;
-    String discountText = '';
-
-    if (_children.length == 2) {
-      discount = 0.15;
-      discountText = '15% off for the 2nd child';
-    } else if (_children.length >= 3) {
-      discount = 0.25;
-      discountText = '25% off for 3+ children';
-    }
-
-    if (discount > 0) {
-      return Container(
-        padding: EdgeInsets.all(3.w),
-        decoration: BoxDecoration(
-          color: const Color(0xFF4CAF50).withOpacity(0.1),
-          borderRadius: BorderRadius.circular(8),
-          border: Border.all(color: const Color(0xFF4CAF50).withOpacity(0.3)),
-        ),
-        child: Row(
-          children: [
-            Icon(
-              Icons.discount,
-              color: const Color(0xFF4CAF50),
-              size: 20.sp,
-            ),
-            SizedBox(width: 2.w),
-            Expanded(
-              child: Text(
-                discountText,
-                style: theme.textTheme.bodyMedium?.copyWith(
-                  fontWeight: FontWeight.w600,
-                  color: const Color(0xFF4CAF50),
-                ),
-              ),
-            ),
-          ],
-        ),
-      );
-    }
-
-    return const SizedBox.shrink();
-  }
-
   Widget _buildPlanComparison(ThemeData theme) {
-    final plans = [
-      SubscriptionPlan(
-        id: 'free',
-        name: 'Free',
-        price: 0.0,
-        currency: 'USD',
-        period: 'month',
-        features: [
-          '1 activity per day',
-          'Basic features',
-        ],
-        limitations: [
-          'No camera support',
-          'No development tracking',
-          'No progress charts',
-          'No parent scoring',
-          'No sharing with other parent',
-        ],
-      ),
-      SubscriptionPlan(
-        id: 'standard',
-        name: 'Standard',
-        price: 7.99,
-        currency: 'USD',
-        period: 'month',
-        features: [
-          'Unlimited access to all activities',
-          'Development tracking and badges',
-          'Multi-parent management',
-          'Progress support',
-        ],
-        limitations: [
-          'No camera support',
-          'No live viewing',
-          'No video recording',
-        ],
-      ),
-      SubscriptionPlan(
-        id: 'premium',
-        name: 'Premium',
-        price: 12.99,
-        currency: 'USD',
-        period: 'month',
-        features: [
-          'All Standard features',
-          'Camera-enabled activities',
-          'Video recording (15 days storage)',
-          'Parent video download',
-          'Live viewing',
-        ],
-        limitations: [],
-      ),
-    ];
-
+    final plans = SubscriptionPlan.plans;
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text(
-          'Plan Comparison',
-          style: theme.textTheme.titleLarge?.copyWith(
-            fontWeight: FontWeight.w600,
-            color: const Color(0xFF333333),
-          ),
-        ),
+        Text('Plan Comparison',
+            style: theme.textTheme.titleLarge?.copyWith(
+                fontWeight: FontWeight.w600, color: const Color(0xFF333333))),
         SizedBox(height: 2.h),
         ...plans.map((plan) => _buildPlanCard(theme, plan)),
       ],
@@ -397,8 +260,8 @@ class _SubscriptionScreenState extends State<SubscriptionScreen> {
   }
 
   Widget _buildPlanCard(ThemeData theme, SubscriptionPlan plan) {
-    bool isSelected = _selectedPlan == plan.id;
-    bool isCurrent = _currentPlan?.id == plan.id;
+    final isSelected = _selectedPlan == plan.id;
+    final isCurrent = _currentPlan?.id == plan.id;
 
     return Container(
       margin: EdgeInsets.only(bottom: 2.h),
@@ -407,15 +270,14 @@ class _SubscriptionScreenState extends State<SubscriptionScreen> {
         color: Colors.white,
         borderRadius: BorderRadius.circular(12),
         border: Border.all(
-          color: isSelected ? const Color(0xFF6C63FF) : const Color(0xFFE0E0E0),
-          width: isSelected ? 2 : 1,
-        ),
+            color:
+                isSelected ? const Color(0xFF6C63FF) : const Color(0xFFE0E0E0),
+            width: isSelected ? 2 : 1),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.05),
-            blurRadius: 8,
-            offset: const Offset(0, 2),
-          ),
+              color: Colors.black.withOpacity(0.05),
+              blurRadius: 8,
+              offset: const Offset(0, 2))
         ],
       ),
       child: Column(
@@ -425,114 +287,74 @@ class _SubscriptionScreenState extends State<SubscriptionScreen> {
             children: [
               Expanded(
                 child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      plan.name,
-                      style: theme.textTheme.titleMedium?.copyWith(
-                        fontWeight: FontWeight.w600,
-                        color: const Color(0xFF333333),
-                      ),
-                    ),
-                    Text(
-                      '\$${plan.price.toStringAsFixed(2)}/${plan.period}',
-                      style: theme.textTheme.titleMedium?.copyWith(
-                        fontWeight: FontWeight.w600,
-                        color: const Color(0xFF6C63FF),
-                      ),
-                    ),
-                  ],
-                ),
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(plan.name,
+                          style: theme.textTheme.titleMedium?.copyWith(
+                              fontWeight: FontWeight.w600,
+                              color: const Color(0xFF333333))),
+                      Text('\$${plan.price.toStringAsFixed(2)}/${plan.period}',
+                          style: theme.textTheme.titleMedium?.copyWith(
+                              fontWeight: FontWeight.w600,
+                              color: const Color(0xFF6C63FF))),
+                    ]),
               ),
               if (isCurrent)
                 Container(
                   padding:
                       EdgeInsets.symmetric(horizontal: 2.w, vertical: 0.5.h),
                   decoration: BoxDecoration(
-                    color: const Color(0xFF4CAF50).withOpacity(0.1),
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                  child: Text(
-                    'Current',
-                    style: theme.textTheme.labelSmall?.copyWith(
-                      fontWeight: FontWeight.w600,
-                      color: const Color(0xFF4CAF50),
-                    ),
-                  ),
+                      color: const Color(0xFF4CAF50).withOpacity(0.1),
+                      borderRadius: BorderRadius.circular(12)),
+                  child: Text('Current',
+                      style: theme.textTheme.labelSmall?.copyWith(
+                          fontWeight: FontWeight.w600,
+                          color: const Color(0xFF4CAF50))),
                 )
               else if (!isSelected)
                 Radio<String>(
                   value: plan.id,
                   groupValue: _selectedPlan,
-                  onChanged: (value) {
-                    setState(() {
-                      _selectedPlan = value!;
-                    });
-                  },
+                  onChanged: (value) => setState(() => _selectedPlan = value!),
                   activeColor: const Color(0xFF6C63FF),
                 ),
             ],
           ),
           SizedBox(height: 2.h),
-          Text(
-            'Features:',
-            style: theme.textTheme.titleMedium?.copyWith(
-              fontWeight: FontWeight.w600,
-              color: const Color(0xFF333333),
-            ),
-          ),
+          Text('Features:',
+              style: theme.textTheme.titleMedium?.copyWith(
+                  fontWeight: FontWeight.w600, color: const Color(0xFF333333))),
           SizedBox(height: 1.h),
-          ...plan.features.map((feature) => Padding(
+          ...plan.features.map((f) => Padding(
                 padding: EdgeInsets.only(bottom: 0.5.h),
-                child: Row(
-                  children: [
-                    Icon(
-                      Icons.check_circle,
-                      color: const Color(0xFF4CAF50),
-                      size: 16.sp,
-                    ),
-                    SizedBox(width: 2.w),
-                    Expanded(
-                      child: Text(
-                        feature,
-                        style: theme.textTheme.bodyMedium?.copyWith(
-                          color: const Color(0xFF666666),
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
+                child: Row(children: [
+                  Icon(Icons.check_circle,
+                      color: const Color(0xFF4CAF50), size: 16.sp),
+                  SizedBox(width: 2.w),
+                  Expanded(
+                      child: Text(f,
+                          style: theme.textTheme.bodyMedium
+                              ?.copyWith(color: const Color(0xFF666666)))),
+                ]),
               )),
           if (plan.limitations.isNotEmpty) ...[
             SizedBox(height: 1.h),
-            Text(
-              'Limitations:',
-              style: theme.textTheme.titleMedium?.copyWith(
-                fontWeight: FontWeight.w600,
-                color: const Color(0xFFD67B7B),
-              ),
-            ),
+            Text('Limitations:',
+                style: theme.textTheme.titleMedium?.copyWith(
+                    fontWeight: FontWeight.w600,
+                    color: const Color(0xFFD67B7B))),
             SizedBox(height: 1.h),
-            ...plan.limitations.map((limitation) => Padding(
+            ...plan.limitations.map((l) => Padding(
                   padding: EdgeInsets.only(bottom: 0.5.h),
-                  child: Row(
-                    children: [
-                      Icon(
-                        Icons.cancel,
-                        color: const Color(0xFFD67B7B),
-                        size: 16.sp,
-                      ),
-                      SizedBox(width: 2.w),
-                      Expanded(
-                        child: Text(
-                          limitation,
-                          style: theme.textTheme.bodyMedium?.copyWith(
-                            color: const Color(0xFF666666),
-                          ),
-                        ),
-                      ),
-                    ],
-                  ),
+                  child: Row(children: [
+                    Icon(Icons.cancel,
+                        color: const Color(0xFFD67B7B), size: 16.sp),
+                    SizedBox(width: 2.w),
+                    Expanded(
+                        child: Text(l,
+                            style: theme.textTheme.bodyMedium
+                                ?.copyWith(color: const Color(0xFF666666)))),
+                  ]),
                 )),
           ],
         ],
@@ -544,26 +366,20 @@ class _SubscriptionScreenState extends State<SubscriptionScreen> {
     return Container(
       padding: EdgeInsets.all(4.w),
       decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(12),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.05),
-            blurRadius: 8,
-            offset: const Offset(0, 2),
-          ),
-        ],
-      ),
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(12),
+          boxShadow: [
+            BoxShadow(
+                color: Colors.black.withOpacity(0.05),
+                blurRadius: 8,
+                offset: const Offset(0, 2))
+          ]),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(
-            'Promo Code',
-            style: theme.textTheme.titleMedium?.copyWith(
-              fontWeight: FontWeight.w600,
-              color: const Color(0xFF333333),
-            ),
-          ),
+          Text('Promo Code',
+              style: theme.textTheme.titleMedium?.copyWith(
+                  fontWeight: FontWeight.w600, color: const Color(0xFF333333))),
           SizedBox(height: 2.h),
           Row(
             children: [
@@ -572,39 +388,28 @@ class _SubscriptionScreenState extends State<SubscriptionScreen> {
                   decoration: InputDecoration(
                     hintText: 'Enter promo code',
                     border: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(8),
-                    ),
+                        borderRadius: BorderRadius.circular(8)),
                     suffixIcon: _isVoucherValid
-                        ? Icon(
-                            Icons.check_circle,
-                            color: const Color(0xFF4CAF50),
-                          )
+                        ? const Icon(Icons.check_circle,
+                            color: Color(0xFF4CAF50))
                         : null,
                   ),
-                  onChanged: (value) {
-                    setState(() {
-                      _voucherCode = value;
-                      _isVoucherValid = value.isNotEmpty;
-                    });
-                  },
+                  onChanged: (v) => setState(() {
+                    _voucherCode = v.trim();
+                    _isVoucherValid = false;
+                  }),
                 ),
               ),
               SizedBox(width: 2.w),
               ElevatedButton(
                 onPressed: _validateVoucher,
                 style: ElevatedButton.styleFrom(
-                  backgroundColor: const Color(0xFF6C63FF),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(8),
-                  ),
-                ),
-                child: Text(
-                  'Apply',
-                  style: theme.textTheme.bodyMedium?.copyWith(
-                    color: Colors.white,
-                    fontWeight: FontWeight.w600,
-                  ),
-                ),
+                    backgroundColor: const Color(0xFF6C63FF),
+                    shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(8))),
+                child: Text('Apply',
+                    style: theme.textTheme.bodyMedium?.copyWith(
+                        color: Colors.white, fontWeight: FontWeight.w600)),
               ),
             ],
           ),
@@ -613,25 +418,18 @@ class _SubscriptionScreenState extends State<SubscriptionScreen> {
             Container(
               padding: EdgeInsets.all(2.w),
               decoration: BoxDecoration(
-                color: const Color(0xFF4CAF50).withOpacity(0.1),
-                borderRadius: BorderRadius.circular(8),
-              ),
+                  color: const Color(0xFF4CAF50).withOpacity(0.1),
+                  borderRadius: BorderRadius.circular(8)),
               child: Row(
                 children: [
-                  Icon(
-                    Icons.check_circle,
-                    color: const Color(0xFF4CAF50),
-                    size: 16.sp,
-                  ),
+                  Icon(Icons.check_circle,
+                      color: const Color(0xFF4CAF50), size: 16.sp),
                   SizedBox(width: 2.w),
                   Expanded(
-                    child: Text(
-                      'Promo code applied!',
-                      style: theme.textTheme.bodyMedium?.copyWith(
-                        fontWeight: FontWeight.w600,
-                        color: const Color(0xFF4CAF50),
-                      ),
-                    ),
+                    child: Text('Promo code applied!',
+                        style: theme.textTheme.bodyMedium?.copyWith(
+                            fontWeight: FontWeight.w600,
+                            color: const Color(0xFF4CAF50))),
                   ),
                 ],
               ),
@@ -643,41 +441,33 @@ class _SubscriptionScreenState extends State<SubscriptionScreen> {
   }
 
   Widget _buildPricingBreakdown(ThemeData theme) {
-    double basePrice = _currentPlan?.price ?? 0.0;
-    double totalPrice = basePrice * _children.length;
+    final basePrice = _currentPlan?.price ?? 0.0;
+    final totalPrice = basePrice * _children.length;
     double discount = 0.0;
-
     if (_children.length == 2) {
       discount = totalPrice * 0.15;
     } else if (_children.length >= 3) {
       discount = totalPrice * 0.25;
     }
-
-    double finalPrice = totalPrice - discount;
+    final finalPrice = totalPrice - discount;
 
     return Container(
       padding: EdgeInsets.all(4.w),
       decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(12),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.05),
-            blurRadius: 8,
-            offset: const Offset(0, 2),
-          ),
-        ],
-      ),
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(12),
+          boxShadow: [
+            BoxShadow(
+                color: Colors.black.withOpacity(0.05),
+                blurRadius: 8,
+                offset: const Offset(0, 2))
+          ]),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(
-            'Price Breakdown',
-            style: theme.textTheme.titleMedium?.copyWith(
-              fontWeight: FontWeight.w600,
-              color: const Color(0xFF333333),
-            ),
-          ),
+          Text('Price Breakdown',
+              style: theme.textTheme.titleMedium?.copyWith(
+                  fontWeight: FontWeight.w600, color: const Color(0xFF333333))),
           SizedBox(height: 2.h),
           _buildPricingRow(
               theme, 'Base Price', '\$${basePrice.toStringAsFixed(2)}'),
@@ -703,24 +493,18 @@ class _SubscriptionScreenState extends State<SubscriptionScreen> {
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
-          Text(
-            label,
-            style: theme.textTheme.bodyMedium?.copyWith(
-              fontSize: isTotal ? 16.sp : 14.sp,
-              fontWeight: isTotal ? FontWeight.w600 : FontWeight.normal,
-              color: const Color(0xFF333333),
-            ),
-          ),
-          Text(
-            value,
-            style: theme.textTheme.bodyMedium?.copyWith(
-              fontSize: isTotal ? 16.sp : 14.sp,
-              fontWeight: isTotal ? FontWeight.w600 : FontWeight.normal,
-              color: isDiscount
-                  ? const Color(0xFF4CAF50)
-                  : const Color(0xFF6C63FF),
-            ),
-          ),
+          Text(label,
+              style: theme.textTheme.bodyMedium?.copyWith(
+                  fontSize: isTotal ? 16.sp : 14.sp,
+                  fontWeight: isTotal ? FontWeight.w600 : FontWeight.normal,
+                  color: const Color(0xFF333333))),
+          Text(value,
+              style: theme.textTheme.bodyMedium?.copyWith(
+                  fontSize: isTotal ? 16.sp : 14.sp,
+                  fontWeight: isTotal ? FontWeight.w600 : FontWeight.normal,
+                  color: isDiscount
+                      ? const Color(0xFF4CAF50)
+                      : const Color(0xFF6C63FF))),
         ],
       ),
     );
@@ -734,20 +518,15 @@ class _SubscriptionScreenState extends State<SubscriptionScreen> {
           child: ElevatedButton(
             onPressed: _upgradePlan,
             style: ElevatedButton.styleFrom(
-              backgroundColor: const Color(0xFF6C63FF),
-              padding: EdgeInsets.symmetric(vertical: 3.h),
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(12),
-              ),
-            ),
-            child: Text(
-              'Upgrade Plan',
-              style: theme.textTheme.bodyMedium?.copyWith(
-                fontSize: 16.sp,
-                fontWeight: FontWeight.w600,
-                color: Colors.white,
-              ),
-            ),
+                backgroundColor: const Color(0xFF6C63FF),
+                padding: EdgeInsets.symmetric(vertical: 3.h),
+                shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(12))),
+            child: Text('Upgrade Plan',
+                style: theme.textTheme.bodyMedium?.copyWith(
+                    fontSize: 16.sp,
+                    fontWeight: FontWeight.w600,
+                    color: Colors.white)),
           ),
         ),
         SizedBox(height: 2.h),
@@ -756,43 +535,34 @@ class _SubscriptionScreenState extends State<SubscriptionScreen> {
           child: OutlinedButton(
             onPressed: _cancelSubscription,
             style: OutlinedButton.styleFrom(
-              side: const BorderSide(color: Color(0xFFD67B7B)),
-              padding: EdgeInsets.symmetric(vertical: 3.h),
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(12),
-              ),
-            ),
-            child: Text(
-              'Cancel Subscription',
-              style: theme.textTheme.bodyMedium?.copyWith(
-                fontSize: 16.sp,
-                fontWeight: FontWeight.w600,
-                color: const Color(0xFFD67B7B),
-              ),
-            ),
+                side: const BorderSide(color: Color(0xFFD67B7B)),
+                padding: EdgeInsets.symmetric(vertical: 3.h),
+                shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(12))),
+            child: Text('Cancel Subscription',
+                style: theme.textTheme.bodyMedium?.copyWith(
+                    fontSize: 16.sp,
+                    fontWeight: FontWeight.w600,
+                    color: const Color(0xFFD67B7B))),
           ),
         ),
       ],
     );
   }
 
-  void _validateVoucher() {
-    // Voucher validation logic
-    if (_voucherCode.isNotEmpty) {
-      setState(() {
-        _isVoucherValid = true;
-      });
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text('Promo code applied!',
-              style: Theme.of(context).textTheme.bodyMedium),
-          backgroundColor: const Color(0xFF4CAF50),
-        ),
-      );
-    }
+  Future<void> _validateVoucher() async {
+    if (_voucherCode.isEmpty) return;
+    final ok = await _subRepo.validateVoucher(_voucherCode);
+    setState(() => _isVoucherValid = ok);
+    if (!mounted) return;
+    ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+      content: Text(ok ? 'Promo code applied!' : 'Invalid promo code',
+          style: Theme.of(context).textTheme.bodyMedium),
+      backgroundColor: ok ? const Color(0xFF4CAF50) : const Color(0xFFD67B7B),
+    ));
   }
 
-  void _upgradePlan() {
+  Future<void> _upgradePlan() async {
     final theme = Theme.of(context);
     showDialog(
       context: context,
@@ -800,23 +570,27 @@ class _SubscriptionScreenState extends State<SubscriptionScreen> {
         title: Text('Upgrade Plan',
             style: theme.textTheme.titleMedium
                 ?.copyWith(fontWeight: FontWeight.bold)),
-        content: Text('Are you sure you want to upgrade your plan?',
+        content: Text(
+            'Upgrade to ${SubscriptionPlan.byId(_selectedPlan).name}?',
             style: theme.textTheme.bodyMedium),
         actions: [
           TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: Text('Cancel',
-                style: theme.textTheme.bodyMedium?.copyWith(
-                    color: theme.colorScheme.onSurface.withOpacity(0.7))),
-          ),
+              onPressed: () => Navigator.pop(context),
+              child: Text('Cancel',
+                  style: theme.textTheme.bodyMedium?.copyWith(
+                      color: theme.colorScheme.onSurface.withOpacity(0.7)))),
           ElevatedButton(
-            onPressed: () {
-              // Upgrade logic
-              Navigator.pop(context);
+            onPressed: () async {
+              await _subRepo.setPlan(_uid!, _selectedPlan,
+                  voucherCode: _isVoucherValid ? _voucherCode : null);
+              if (mounted) Navigator.pop(context);
+              if (mounted) {
+                ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(content: Text('Plan updated')));
+              }
             },
             style: ElevatedButton.styleFrom(
-              backgroundColor: const Color(0xFF6C63FF),
-            ),
+                backgroundColor: const Color(0xFF6C63FF)),
             child: Text('Upgrade',
                 style:
                     theme.textTheme.bodyMedium?.copyWith(color: Colors.white)),
@@ -826,7 +600,7 @@ class _SubscriptionScreenState extends State<SubscriptionScreen> {
     );
   }
 
-  void _cancelSubscription() {
+  Future<void> _cancelSubscription() async {
     final theme = Theme.of(context);
     showDialog(
       context: context,
@@ -838,19 +612,21 @@ class _SubscriptionScreenState extends State<SubscriptionScreen> {
             style: theme.textTheme.bodyMedium),
         actions: [
           TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: Text('Cancel',
-                style: theme.textTheme.bodyMedium?.copyWith(
-                    color: theme.colorScheme.onSurface.withOpacity(0.7))),
-          ),
+              onPressed: () => Navigator.pop(context),
+              child: Text('Close',
+                  style: theme.textTheme.bodyMedium?.copyWith(
+                      color: theme.colorScheme.onSurface.withOpacity(0.7)))),
           ElevatedButton(
-            onPressed: () {
-              // Cancel subscription logic
-              Navigator.pop(context);
+            onPressed: () async {
+              await _subRepo.cancel(_uid!);
+              if (mounted) Navigator.pop(context);
+              if (mounted) {
+                ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(content: Text('Subscription cancelled')));
+              }
             },
             style: ElevatedButton.styleFrom(
-              backgroundColor: const Color(0xFFD67B7B),
-            ),
+                backgroundColor: const Color(0xFFD67B7B)),
             child: Text('Cancel',
                 style:
                     theme.textTheme.bodyMedium?.copyWith(color: Colors.white)),
@@ -859,24 +635,4 @@ class _SubscriptionScreenState extends State<SubscriptionScreen> {
       ),
     );
   }
-}
-
-class SubscriptionPlan {
-  final String id;
-  final String name;
-  final double price;
-  final String currency;
-  final String period;
-  final List<String> features;
-  final List<String> limitations;
-
-  SubscriptionPlan({
-    required this.id,
-    required this.name,
-    required this.price,
-    required this.currency,
-    required this.period,
-    required this.features,
-    required this.limitations,
-  });
 }
