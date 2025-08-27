@@ -6,6 +6,7 @@ import 'package:firebase_core/firebase_core.dart';
 import 'core/app_export.dart';
 import 'widgets/custom_error_widget.dart';
 import 'services/auth_provider.dart';
+import 'services/mock_firebase.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -15,6 +16,8 @@ void main() async {
     await Firebase.initializeApp();
   } catch (e) {
     debugPrint('Firebase initialization error: $e - Using mock services');
+    // Initialize demo data for mock Firebase
+    await MockFirebaseAuth.instance.initializeDemoData();
   }
 
   // 🚨 CRITICAL: Custom error handling - DO NOT REMOVE

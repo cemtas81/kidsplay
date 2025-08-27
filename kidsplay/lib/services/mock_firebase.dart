@@ -15,6 +15,97 @@ class MockFirebaseAuth {
   MockUser? get currentUser => _currentUser;
   ValueListenable<MockUser?> get authStateChanges => _authStateController;
 
+  // Auto-initialize demo user and data
+  Future<void> initializeDemoData() async {
+    final prefs = await SharedPreferences.getInstance();
+    final users = prefs.getStringList('mock_users') ?? [];
+    
+    if (users.isEmpty) {
+      // Create demo user
+      const demoEmail = 'demo@kidsplay.com';
+      const demoUserId = 'demo_user_123';
+      
+      final demoUserData = {
+        'uid': demoUserId,
+        'email': demoEmail,
+        'displayName': 'Demo Parent',
+        'password': 'Demo123!'
+      };
+      
+      users.add(json.encode(demoUserData));
+      await prefs.setStringList('mock_users', users);
+      
+      // Create demo children
+      final children = <String>[];
+      final demoChildren = [
+        {
+          'id': 'demo_child_1',
+          'data': {
+            'parentId': demoUserId,
+            'name': 'Emma Rodriguez',
+            'age': 4,
+            'gender': 'girl',
+            'hobbies': ['Drawing', 'Dancing', 'Building blocks'],
+            'createdAt': DateTime.now().toIso8601String(),
+            'updatedAt': DateTime.now().toIso8601String(),
+            'isActive': true,
+            'todayActivities': 3,
+            'dailyGoal': 5,
+            'currentStreak': 7,
+            'badges': [
+              {'name': 'Creative', 'icon': 'palette'},
+              {'name': 'Active', 'icon': 'directions_run'},
+              {'name': 'Explorer', 'icon': 'explore'}
+            ],
+            'screenTime': '2 hours',
+            'lastActivity': 'Creative Drawing',
+            'completionRate': 85,
+            'profileImageUrl': 'https://images.unsplash.com/photo-1544005313-94ddf0286df2?fm=jpg&q=60&w=400&ixlib=rb-4.0.3',
+          }
+        },
+        {
+          'id': 'demo_child_2',
+          'data': {
+            'parentId': demoUserId,
+            'name': 'Lucas Chen',
+            'age': 6,
+            'gender': 'boy',
+            'hobbies': ['Science experiments', 'Lego building', 'Reading'],
+            'createdAt': DateTime.now().toIso8601String(),
+            'updatedAt': DateTime.now().toIso8601String(),
+            'isActive': true,
+            'todayActivities': 5,
+            'dailyGoal': 6,
+            'currentStreak': 12,
+            'badges': [
+              {'name': 'Scientist', 'icon': 'science'},
+              {'name': 'Builder', 'icon': 'construction'},
+              {'name': 'Reader', 'icon': 'menu_book'}
+            ],
+            'screenTime': '1.5 hours',
+            'lastActivity': 'Nature Explorer',
+            'completionRate': 92,
+            'profileImageUrl': 'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?fm=jpg&q=60&w=400&ixlib=rb-4.0.3',
+          }
+        }
+      ];
+      
+      for (final child in demoChildren) {
+        children.add(json.encode(child));
+      }
+      
+      await prefs.setStringList('mock_children', children);
+      
+      // Auto-login demo user
+      _currentUser = MockUser(
+        uid: demoUserId,
+        email: demoEmail,
+        displayName: 'Demo Parent',
+      );
+      _authStateController.value = _currentUser;
+    }
+  }
+
   Future<MockUserCredential> createUserWithEmailAndPassword({
     required String email,
     required String password,
