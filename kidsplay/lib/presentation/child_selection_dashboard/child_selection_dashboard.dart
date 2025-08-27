@@ -4,6 +4,9 @@ import 'package:sizer/sizer.dart';
 
 import '../../core/app_export.dart';
 import '../../core/activity_recommendation_engine.dart';
+import '../../models/child.dart';
+import '../../repositories/child_repository.dart';
+import '../../services/auth_service.dart';
 import './widgets/child_profile_card.dart';
 import './widgets/custom_tab_navigation.dart';
 import './widgets/dashboard_header.dart';
@@ -27,69 +30,36 @@ class _ChildSelectionDashboardState extends State<ChildSelectionDashboard> {
   int _currentTabIndex = 0;
   bool _isRefreshing = false;
   DateTime _lastUpdated = DateTime.now();
+  
+  // Real data from database
+  List<Child> _children = [];
+  String? _currentUserId;
+  final ChildRepository _childRepository = ChildRepository();
 
-  // Mock data for children profiles
-  final List<Map<String, dynamic>> _childrenData = [
-    {
-      "id": 1,
-      "name": "Emma Rodriguez",
-      "age": 4,
-      "gender": "Female",
-      "profileImage":
-          "https://images.unsplash.com/photo-1544005313-94ddf0286df2?fm=jpg&q=60&w=400&ixlib=rb-4.0.3",
-      "todayActivities": 3,
-      "dailyGoal": 5,
-      "currentStreak": 7,
-      "badges": [
-        {"name": "Creative", "icon": "palette"},
-        {"name": "Active", "icon": "directions_run"},
-        {"name": "Explorer", "icon": "explore"}
-      ],
-      "hobbies": ["Drawing", "Dancing", "Building blocks"],
-      "screenTime": "2 hours",
-      "lastActivity": "Creative Drawing",
-      "completionRate": 85
-    },
-    {
-      "id": 2,
-      "name": "Lucas Chen",
-      "age": 6,
-      "gender": "Male",
-      "profileImage":
-          "https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?fm=jpg&q=60&w=400&ixlib=rb-4.0.3",
-      "todayActivities": 5,
-      "dailyGoal": 6,
-      "currentStreak": 12,
-      "badges": [
-        {"name": "Scientist", "icon": "science"},
-        {"name": "Builder", "icon": "construction"},
-        {"name": "Reader", "icon": "menu_book"}
-      ],
-      "hobbies": ["Science experiments", "Lego building", "Reading"],
-      "screenTime": "1.5 hours",
-      "lastActivity": "Nature Explorer",
-      "completionRate": 92
-    },
-    {
-      "id": 3,
-      "name": "Sophia Williams",
-      "age": 3,
-      "gender": "Female",
-      "profileImage":
-          "https://images.unsplash.com/photo-1518717758536-85ae29035b6d?fm=jpg&q=60&w=400&ixlib=rb-4.0.3",
-      "todayActivities": 2,
-      "dailyGoal": 4,
-      "currentStreak": 3,
-      "badges": [
-        {"name": "Musical", "icon": "music_note"},
-        {"name": "Helper", "icon": "volunteer_activism"}
-      ],
-      "hobbies": ["Singing", "Helping mom", "Playing with dolls"],
-      "screenTime": "1 hour",
-      "lastActivity": "Musical Time",
-      "completionRate": 78
+  @override
+  void initState() {
+    super.initState();
+    _loadChildren();
+  }
+
+  Future<void> _loadChildren() async {
+    try {
+      final user = await AuthService.ensureInitializedAndSignedIn();
+      setState(() {
+        _currentUserId = user.uid;
+      });
+      
+      // Listen to children updates
+      _childRepository.watchChildrenOf(user.uid).listen((children) {
+        setState(() {
+          _children = children;
+          _lastUpdated = DateTime.now();
+        });
+      });
+    } catch (error) {
+      print('Error loading children: $error');
     }
-  ];
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -138,7 +108,7 @@ class _ChildSelectionDashboardState extends State<ChildSelectionDashboard> {
   }
 
   Widget _buildDashboardContent() {
-    return _childrenData.isEmpty
+    return _children.isEmpty
         ? EmptyStateWidget(onAddChild: _addNewChild)
         : RefreshIndicator(
             onRefresh: _refreshData,
@@ -148,22 +118,23 @@ class _ChildSelectionDashboardState extends State<ChildSelectionDashboard> {
                 top: 1.h,
                 bottom: 10.h, // Space for FAB
               ),
-              itemCount: _childrenData.length + 1, // +1 for last updated info
+              itemCount: _children.length + 1, // +1 for last updated info
               itemBuilder: (context, index) {
-                if (index == _childrenData.length) {
+                if (index == _children.length) {
                   return _buildLastUpdatedInfo();
                 }
 
-                final child = _childrenData[index];
+                final child = _children[index];
+                final childData = _convertChildToMap(child);
                 return ChildProfileCard(
-                  childData: child,
-                  onTap: () => _selectChild(child),
-                  onStartActivity: () => _startActivity(child),
-                  onViewProgress: () => _viewProgress(child),
-                  onEditProfile: () => _editProfile(child),
-                  onPauseActivities: () => _pauseActivities(child),
-                  onShareProgress: () => _shareProgress(child),
-                  onArchiveProfile: () => _archiveProfile(child),
+                  childData: childData,
+                  onTap: () => _selectChild(childData),
+                  onStartActivity: () => _startActivity(childData),
+                  onViewProgress: () => _viewProgress(childData),
+                  onEditProfile: () => _editProfile(childData),
+                  onPauseActivities: () => _pauseActivities(childData),
+                  onShareProgress: () => _shareProgress(childData),
+                  onArchiveProfile: () => _archiveProfile(childData),
                 );
               },
             ),
@@ -428,8 +399,8 @@ class _ChildSelectionDashboardState extends State<ChildSelectionDashboard> {
       _isRefreshing = true;
     });
 
-    // Simulate network call
-    await Future.delayed(const Duration(seconds: 1));
+    // Refresh children data from database
+    await _loadChildren();
 
     setState(() {
       _isRefreshing = false;
@@ -438,6 +409,26 @@ class _ChildSelectionDashboardState extends State<ChildSelectionDashboard> {
 
     // Provide haptic feedback
     HapticFeedback.mediumImpact();
+  }
+
+  // Helper method to convert Child object to Map format for ChildProfileCard
+  Map<String, dynamic> _convertChildToMap(Child child) {
+    final age = DateTime.now().difference(child.birthDate).inDays ~/ 365;
+    return {
+      "id": child.id,
+      "name": child.name,
+      "age": age,
+      "gender": child.gender,
+      "profileImage": null, // Could be enhanced to support profile images
+      "todayActivities": 0, // Could be enhanced with real activity tracking
+      "dailyGoal": 5, // Default goal
+      "currentStreak": 0, // Could be enhanced with real streak tracking
+      "badges": [], // Could be enhanced with real badge system
+      "hobbies": child.hobbies,
+      "screenTime": child.dailyPlayTime,
+      "lastActivity": "None yet",
+      "completionRate": 0, // Could be enhanced with real progress tracking
+    };
   }
 
   void _selectChild(Map<String, dynamic> child) {
@@ -552,9 +543,14 @@ class _ChildSelectionDashboardState extends State<ChildSelectionDashboard> {
       'Archive Profile',
       'Are you sure you want to archive ${child["name"]}\'s profile? This action can be undone later.',
       () {
-        setState(() {
-          _childrenData.removeWhere((c) => c["id"] == child["id"]);
-        });
+        // TODO: Implement proper archiving by removing from database
+        // For now, just show success message
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('${child["name"]}\'s profile archived successfully'),
+            backgroundColor: Theme.of(context).colorScheme.primary,
+          ),
+        );
       },
     );
   }

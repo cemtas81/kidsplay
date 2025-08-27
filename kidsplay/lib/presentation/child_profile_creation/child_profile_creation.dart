@@ -4,6 +4,9 @@ import 'package:image_picker/image_picker.dart';
 import 'package:sizer/sizer.dart';
 
 import '../../core/app_export.dart';
+import '../../models/child.dart';
+import '../../repositories/child_repository.dart';
+import '../../services/auth_service.dart';
 import './widgets/hobby_selection_grid.dart';
 import './widgets/play_duration_picker.dart';
 import './widgets/profile_photo_section.dart';
@@ -161,69 +164,112 @@ class _ChildProfileCreationState extends State<ChildProfileCreation>
     );
   }
 
-  void _completeProfile() {
-    // Show success animation and navigate
-    showDialog(
-      context: context,
-      barrierDismissible: false,
-      builder: (context) => AlertDialog(
-        backgroundColor: AppTheme.lightTheme.colorScheme.surface,
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(20),
-        ),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Container(
-              padding: EdgeInsets.all(4.w),
-              decoration: BoxDecoration(
-                color: AppTheme.lightTheme.colorScheme.primary
-                    .withValues(alpha: 0.1),
-                shape: BoxShape.circle,
-              ),
-              child: CustomIconWidget(
-                iconName: 'celebration',
-                color: AppTheme.lightTheme.colorScheme.primary,
-                size: 48,
-              ),
+  void _completeProfile() async {
+    try {
+      // Get current user
+      final user = await AuthService.ensureInitializedAndSignedIn();
+      
+      // Create Child object with form data
+      final child = Child(
+        id: DateTime.now().millisecondsSinceEpoch.toString(), // Simple ID generation
+        name: _nameController.text.trim(),
+        surname: '', // Not collected in current form, could be added later
+        birthDate: DateTime.now().subtract(Duration(days: (_selectedAge * 365).round())),
+        gender: _selectedGender,
+        hobbies: _selectedHobbies,
+        hasScreenDependency: _assessmentData['hasScreenDependency'] ?? false,
+        screenDependencyLevel: _assessmentData['screenDependencyLevel'] ?? 'normal',
+        usesScreenDuringMeals: _assessmentData['usesScreenDuringMeals'] ?? false,
+        wantsToChange: _assessmentData['wantsToChange'] ?? false,
+        dailyPlayTime: '${_playDuration}min',
+        parentIds: [user.uid],
+        relationshipToParent: 'parent', // Default, could be made configurable
+        hasCameraPermission: true, // Default permission
+      );
+      
+      // Save child to database
+      final childRepo = ChildRepository();
+      await childRepo.saveChild(user.uid, child);
+      
+      // Show success animation and navigate
+      if (mounted) {
+        showDialog(
+          context: context,
+          barrierDismissible: false,
+          builder: (context) => AlertDialog(
+            backgroundColor: AppTheme.lightTheme.colorScheme.surface,
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(20),
             ),
-            SizedBox(height: 3.h),
-            Text(
-              'Profile Created!',
-              style: AppTheme.lightTheme.textTheme.headlineSmall?.copyWith(
-                color: AppTheme.lightTheme.colorScheme.primary,
-                fontWeight: FontWeight.w600,
-              ),
-            ),
-            SizedBox(height: 2.h),
-            Text(
-              'Welcome to KidsPlay! Let\'s start exploring fun activities for ${_nameController.text}.',
-              style: AppTheme.lightTheme.textTheme.bodyMedium?.copyWith(
-                color: AppTheme.lightTheme.colorScheme.onSurfaceVariant,
-              ),
-              textAlign: TextAlign.center,
-            ),
-            SizedBox(height: 3.h),
-            ElevatedButton(
-              onPressed: () {
-                Navigator.pop(context);
-                Navigator.pushReplacementNamed(
-                    context, '/child-selection-dashboard');
-              },
-              style: ElevatedButton.styleFrom(
-                backgroundColor: AppTheme.lightTheme.colorScheme.primary,
-                foregroundColor: Colors.white,
-                minimumSize: Size(double.infinity, 6.h),
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(12),
+            content: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Container(
+                  padding: EdgeInsets.all(4.w),
+                  decoration: BoxDecoration(
+                    color: AppTheme.lightTheme.colorScheme.primary
+                        .withValues(alpha: 0.1),
+                    shape: BoxShape.circle,
+                  ),
+                  child: CustomIconWidget(
+                    iconName: 'celebration',
+                    color: AppTheme.lightTheme.colorScheme.primary,
+                    size: 48,
+                  ),
                 ),
-              ),
-              child: const Text('Start Exploring'),
+                SizedBox(height: 3.h),
+                Text(
+                  'Profile Created!',
+                  style: AppTheme.lightTheme.textTheme.headlineSmall?.copyWith(
+                    color: AppTheme.lightTheme.colorScheme.primary,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+                SizedBox(height: 2.h),
+                Text(
+                  'Welcome to KidsPlay! Let\'s start exploring fun activities for ${_nameController.text}.',
+                  style: AppTheme.lightTheme.textTheme.bodyMedium?.copyWith(
+                    color: AppTheme.lightTheme.colorScheme.onSurfaceVariant,
+                  ),
+                  textAlign: TextAlign.center,
+                ),
+                SizedBox(height: 3.h),
+                ElevatedButton(
+                  onPressed: () {
+                    Navigator.pop(context);
+                    Navigator.pushReplacementNamed(
+                        context, '/child-selection-dashboard');
+                  },
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: AppTheme.lightTheme.colorScheme.primary,
+                    foregroundColor: Colors.white,
+                    minimumSize: Size(double.infinity, 6.h),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                  ),
+                  child: const Text('Start Exploring'),
+                ),
+              ],
             ),
-          ],
-        ),
-      ),
-    );
+          ),
+        );
+      }
+    } catch (error) {
+      // Handle errors gracefully
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Error creating profile: ${error.toString()}'),
+            backgroundColor: AppTheme.lightTheme.colorScheme.error,
+            behavior: SnackBarBehavior.floating,
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(12),
+            ),
+          ),
+        );
+      }
+    }
   }
 
   Widget _buildStep1() {
