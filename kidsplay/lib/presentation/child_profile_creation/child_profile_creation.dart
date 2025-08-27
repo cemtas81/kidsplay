@@ -4,6 +4,8 @@ import 'package:image_picker/image_picker.dart';
 import 'package:sizer/sizer.dart';
 
 import '../../core/app_export.dart';
+import '../../services/auth_provider.dart';
+import '../../services/user_data_service.dart';
 import './widgets/hobby_selection_grid.dart';
 import './widgets/play_duration_picker.dart';
 import './widgets/profile_photo_section.dart';
@@ -22,6 +24,9 @@ class _ChildProfileCreationState extends State<ChildProfileCreation>
   final PageController _pageController = PageController();
   late AnimationController _animationController;
   late Animation<double> _fadeAnimation;
+
+  final AuthProvider _authProvider = AuthProvider();
+  final UserDataService _userDataService = UserDataService();
 
   int _currentStep = 1;
   final int _totalSteps = 4;
@@ -161,69 +166,128 @@ class _ChildProfileCreationState extends State<ChildProfileCreation>
     );
   }
 
-  void _completeProfile() {
-    // Show success animation and navigate
-    showDialog(
-      context: context,
-      barrierDismissible: false,
-      builder: (context) => AlertDialog(
-        backgroundColor: AppTheme.lightTheme.colorScheme.surface,
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(20),
+  Future<void> _completeProfile() async {
+    if (_authProvider.currentUser == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Please sign in to create a child profile'),
+          backgroundColor: Colors.red,
         ),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Container(
-              padding: EdgeInsets.all(4.w),
-              decoration: BoxDecoration(
-                color: AppTheme.lightTheme.colorScheme.primary
-                    .withValues(alpha: 0.1),
-                shape: BoxShape.circle,
-              ),
-              child: CustomIconWidget(
-                iconName: 'celebration',
-                color: AppTheme.lightTheme.colorScheme.primary,
-                size: 48,
-              ),
+      );
+      return;
+    }
+
+    try {
+      // Show loading dialog
+      showDialog(
+        context: context,
+        barrierDismissible: false,
+        builder: (context) => const AlertDialog(
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              CircularProgressIndicator(),
+              SizedBox(height: 16),
+              Text('Creating profile...'),
+            ],
+          ),
+        ),
+      );
+
+      // Save child profile to Firebase
+      final childId = await _userDataService.createChildProfile(
+        parentId: _authProvider.currentUser!.uid,
+        name: _nameController.text.trim(),
+        age: _selectedAge.round(),
+        gender: _selectedGender,
+        hobbies: _selectedHobbies,
+        additionalData: {
+          'assessmentData': _assessmentData,
+          'playDuration': _playDuration,
+          'activityPreferences': _activityPreferences,
+        },
+      );
+
+      // Update parent's hasChildren status
+      await _authProvider.updateHasChildren(true);
+
+      if (mounted) {
+        Navigator.pop(context); // Close loading dialog
+        
+        // Show success dialog
+        showDialog(
+          context: context,
+          barrierDismissible: false,
+          builder: (context) => AlertDialog(
+            backgroundColor: AppTheme.lightTheme.colorScheme.surface,
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(20),
             ),
-            SizedBox(height: 3.h),
-            Text(
-              'Profile Created!',
-              style: AppTheme.lightTheme.textTheme.headlineSmall?.copyWith(
-                color: AppTheme.lightTheme.colorScheme.primary,
-                fontWeight: FontWeight.w600,
-              ),
-            ),
-            SizedBox(height: 2.h),
-            Text(
-              'Welcome to KidsPlay! Let\'s start exploring fun activities for ${_nameController.text}.',
-              style: AppTheme.lightTheme.textTheme.bodyMedium?.copyWith(
-                color: AppTheme.lightTheme.colorScheme.onSurfaceVariant,
-              ),
-              textAlign: TextAlign.center,
-            ),
-            SizedBox(height: 3.h),
-            ElevatedButton(
-              onPressed: () {
-                Navigator.pop(context);
-                Navigator.pushReplacementNamed(
-                    context, '/child-selection-dashboard');
-              },
-              style: ElevatedButton.styleFrom(
-                backgroundColor: AppTheme.lightTheme.colorScheme.primary,
-                foregroundColor: Colors.white,
-                minimumSize: Size(double.infinity, 6.h),
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(12),
+            content: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Container(
+                  padding: EdgeInsets.all(4.w),
+                  decoration: BoxDecoration(
+                    color: AppTheme.lightTheme.colorScheme.primary
+                        .withValues(alpha: 0.1),
+                    shape: BoxShape.circle,
+                  ),
+                  child: CustomIconWidget(
+                    iconName: 'celebration',
+                    color: AppTheme.lightTheme.colorScheme.primary,
+                    size: 48,
+                  ),
                 ),
-              ),
-              child: const Text('Start Exploring'),
+                SizedBox(height: 3.h),
+                Text(
+                  'Profile Created!',
+                  style: AppTheme.lightTheme.textTheme.headlineSmall?.copyWith(
+                    color: AppTheme.lightTheme.colorScheme.primary,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+                SizedBox(height: 2.h),
+                Text(
+                  'Welcome to KidsPlay! Let\'s start exploring fun activities for ${_nameController.text}.',
+                  style: AppTheme.lightTheme.textTheme.bodyMedium?.copyWith(
+                    color: AppTheme.lightTheme.colorScheme.onSurfaceVariant,
+                  ),
+                  textAlign: TextAlign.center,
+                ),
+                SizedBox(height: 3.h),
+                ElevatedButton(
+                  onPressed: () {
+                    Navigator.pop(context);
+                    Navigator.pushReplacementNamed(
+                        context, '/child-selection-dashboard');
+                  },
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: AppTheme.lightTheme.colorScheme.primary,
+                    foregroundColor: Colors.white,
+                    minimumSize: Size(double.infinity, 6.h),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                  ),
+                  child: const Text('Start Exploring'),
+                ),
+              ],
             ),
-          ],
-        ),
-      ),
-    );
+          ),
+        );
+      }
+    } catch (e) {
+      if (mounted) {
+        Navigator.pop(context); // Close loading dialog
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Failed to create profile: $e'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+    }
   }
 
   Widget _buildStep1() {

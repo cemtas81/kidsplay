@@ -4,6 +4,8 @@ import 'package:sizer/sizer.dart';
 
 import '../../core/app_export.dart';
 import '../../core/activity_recommendation_engine.dart';
+import '../../services/auth_provider.dart';
+import '../../services/user_data_service.dart';
 import './widgets/child_profile_card.dart';
 import './widgets/custom_tab_navigation.dart';
 import './widgets/dashboard_header.dart';
@@ -27,69 +29,43 @@ class _ChildSelectionDashboardState extends State<ChildSelectionDashboard> {
   int _currentTabIndex = 0;
   bool _isRefreshing = false;
   DateTime _lastUpdated = DateTime.now();
+  
+  final AuthProvider _authProvider = AuthProvider();
+  final UserDataService _userDataService = UserDataService();
+  List<Map<String, dynamic>> _childrenData = [];
+  bool _isLoading = true;
 
-  // Mock data for children profiles
-  final List<Map<String, dynamic>> _childrenData = [
-    {
-      "id": 1,
-      "name": "Emma Rodriguez",
-      "age": 4,
-      "gender": "Female",
-      "profileImage":
-          "https://images.unsplash.com/photo-1544005313-94ddf0286df2?fm=jpg&q=60&w=400&ixlib=rb-4.0.3",
-      "todayActivities": 3,
-      "dailyGoal": 5,
-      "currentStreak": 7,
-      "badges": [
-        {"name": "Creative", "icon": "palette"},
-        {"name": "Active", "icon": "directions_run"},
-        {"name": "Explorer", "icon": "explore"}
-      ],
-      "hobbies": ["Drawing", "Dancing", "Building blocks"],
-      "screenTime": "2 hours",
-      "lastActivity": "Creative Drawing",
-      "completionRate": 85
-    },
-    {
-      "id": 2,
-      "name": "Lucas Chen",
-      "age": 6,
-      "gender": "Male",
-      "profileImage":
-          "https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?fm=jpg&q=60&w=400&ixlib=rb-4.0.3",
-      "todayActivities": 5,
-      "dailyGoal": 6,
-      "currentStreak": 12,
-      "badges": [
-        {"name": "Scientist", "icon": "science"},
-        {"name": "Builder", "icon": "construction"},
-        {"name": "Reader", "icon": "menu_book"}
-      ],
-      "hobbies": ["Science experiments", "Lego building", "Reading"],
-      "screenTime": "1.5 hours",
-      "lastActivity": "Nature Explorer",
-      "completionRate": 92
-    },
-    {
-      "id": 3,
-      "name": "Sophia Williams",
-      "age": 3,
-      "gender": "Female",
-      "profileImage":
-          "https://images.unsplash.com/photo-1518717758536-85ae29035b6d?fm=jpg&q=60&w=400&ixlib=rb-4.0.3",
-      "todayActivities": 2,
-      "dailyGoal": 4,
-      "currentStreak": 3,
-      "badges": [
-        {"name": "Musical", "icon": "music_note"},
-        {"name": "Helper", "icon": "volunteer_activism"}
-      ],
-      "hobbies": ["Singing", "Helping mom", "Playing with dolls"],
-      "screenTime": "1 hour",
-      "lastActivity": "Musical Time",
-      "completionRate": 78
+  @override
+  void initState() {
+    super.initState();
+    _loadChildren();
+  }
+
+  Future<void> _loadChildren() async {
+    if (_authProvider.currentUser == null) return;
+
+    setState(() => _isLoading = true);
+
+    try {
+      final children = await _userDataService.getChildrenForParent(
+        _authProvider.currentUser!.uid,
+      );
+      
+      setState(() {
+        _childrenData = children;
+        _isLoading = false;
+        _lastUpdated = DateTime.now();
+      });
+    } catch (e) {
+      setState(() => _isLoading = false);
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Failed to load children: $e'),
+          backgroundColor: Colors.red,
+        ),
+      );
     }
-  ];
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -138,6 +114,19 @@ class _ChildSelectionDashboardState extends State<ChildSelectionDashboard> {
   }
 
   Widget _buildDashboardContent() {
+    if (_isLoading) {
+      return const Center(
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            CircularProgressIndicator(),
+            SizedBox(height: 16),
+            Text('Loading children...'),
+          ],
+        ),
+      );
+    }
+    
     return _childrenData.isEmpty
         ? EmptyStateWidget(onAddChild: _addNewChild)
         : RefreshIndicator(
@@ -275,6 +264,13 @@ class _ChildSelectionDashboardState extends State<ChildSelectionDashboard> {
             title: 'Progress Dashboard',
             subtitle: 'View detailed progress reports',
             onTap: () => _navigateToProgressDashboard(),
+          ),
+          SizedBox(height: 2.h),
+          _buildSettingsCard(
+            icon: 'logout',
+            title: 'Sign Out',
+            subtitle: 'Sign out of your account',
+            onTap: () => _handleSignOut(),
           ),
         ],
       ),
@@ -428,12 +424,10 @@ class _ChildSelectionDashboardState extends State<ChildSelectionDashboard> {
       _isRefreshing = true;
     });
 
-    // Simulate network call
-    await Future.delayed(const Duration(seconds: 1));
+    await _loadChildren();
 
     setState(() {
       _isRefreshing = false;
-      _lastUpdated = DateTime.now();
     });
 
     // Provide haptic feedback
@@ -622,6 +616,45 @@ class _ChildSelectionDashboardState extends State<ChildSelectionDashboard> {
       context,
       MaterialPageRoute(
         builder: (context) => ProgressDashboardScreen(child: sampleChild),
+      ),
+    );
+  }
+
+  Future<void> _handleSignOut() async {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Sign Out'),
+        content: const Text('Are you sure you want to sign out?'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('Cancel'),
+          ),
+          TextButton(
+            onPressed: () async {
+              Navigator.pop(context);
+              try {
+                await _authProvider.signOut();
+                if (mounted) {
+                  Navigator.pushNamedAndRemoveUntil(
+                    context,
+                    '/splash-screen',
+                    (route) => false,
+                  );
+                }
+              } catch (e) {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(
+                    content: Text('Sign out failed: $e'),
+                    backgroundColor: Colors.red,
+                  ),
+                );
+              }
+            },
+            child: const Text('Sign Out'),
+          ),
+        ],
       ),
     );
   }

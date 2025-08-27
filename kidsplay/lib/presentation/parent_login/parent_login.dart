@@ -4,6 +4,7 @@ import 'package:sizer/sizer.dart';
 
 import '../../core/app_export.dart';
 import '../../widgets/custom_icon_widget.dart';
+import '../../services/auth_provider.dart';
 import './widgets/biometric_auth_widget.dart';
 import './widgets/login_form_widget.dart';
 import './widgets/login_header_widget.dart';
@@ -22,23 +23,27 @@ class _ParentLoginState extends State<ParentLogin> {
   bool _isBiometricAvailable = true; // Mock availability
   String? _errorMessage;
   final _scrollController = ScrollController();
+  final AuthProvider _authProvider = AuthProvider();
 
-  // Mock credentials for demo
-  final Map<String, dynamic> _mockCredentials = {
-    "parent@kidsplay.com": {
-      "password": "parent123",
-      "name": "Sarah Johnson",
-      "hasChildren": true,
-    },
-    "demo@kidsplay.com": {
-      "password": "demo123",
-      "name": "Demo Parent",
-      "hasChildren": false,
-    },
-  };
+  @override
+  void initState() {
+    super.initState();
+    // Listen to auth provider changes
+    _authProvider.addListener(_onAuthStateChanged);
+  }
+
+  void _onAuthStateChanged() {
+    if (_authProvider.errorMessage != null) {
+      setState(() {
+        _errorMessage = _authProvider.errorMessage;
+        _isLoading = false;
+      });
+    }
+  }
 
   @override
   void dispose() {
+    _authProvider.removeListener(_onAuthStateChanged);
     _scrollController.dispose();
     super.dispose();
   }
@@ -50,40 +55,24 @@ class _ParentLoginState extends State<ParentLogin> {
     });
 
     try {
-      // Simulate API call delay
-      await Future.delayed(const Duration(milliseconds: 1500));
+      final success = await _authProvider.signIn(
+        email: email,
+        password: password,
+      );
 
-      // Check mock credentials
-      if (_mockCredentials.containsKey(email.toLowerCase())) {
-        final userCredentials = _mockCredentials[email.toLowerCase()]!;
-        if (userCredentials["password"] == password) {
-          // Successful login
-          HapticFeedback.lightImpact();
-
-          if (mounted) {
-            // Navigate based on user state
-            if (userCredentials["hasChildren"] == true) {
-              Navigator.pushReplacementNamed(
-                  context, '/child-selection-dashboard');
-            } else {
-              Navigator.pushReplacementNamed(
-                  context, '/child-profile-creation');
-            }
-          }
-          return;
+      if (success && mounted) {
+        HapticFeedback.lightImpact();
+        // Navigation will be handled by auth state listener in splash or main app
+        if (_authProvider.hasChildren) {
+          Navigator.pushReplacementNamed(context, '/child-selection-dashboard');
+        } else {
+          Navigator.pushReplacementNamed(context, '/child-profile-creation');
         }
       }
-
-      // Invalid credentials
-      HapticFeedback.heavyImpact();
-      setState(() {
-        _errorMessage = 'Invalid email or password. Please try again.';
-      });
     } catch (e) {
       HapticFeedback.heavyImpact();
       setState(() {
-        _errorMessage =
-            'Login failed. Please check your connection and try again.';
+        _errorMessage = 'Login failed. Please try again.';
       });
     } finally {
       if (mounted) {
@@ -112,16 +101,49 @@ class _ParentLoginState extends State<ParentLogin> {
       context: context,
       builder: (context) => AlertDialog(
         title: const Text('Reset Password'),
-        content: const Text(
-          'Password reset functionality will be implemented in the next version. '
-          'For demo purposes, use:\n\n'
-          'Email: parent@kidsplay.com\n'
-          'Password: parent123',
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            const Text('Enter your email address to receive a password reset link.'),
+            const SizedBox(height: 16),
+            TextField(
+              decoration: const InputDecoration(
+                labelText: 'Email',
+                border: OutlineInputBorder(),
+              ),
+              onSubmitted: (email) async {
+                if (email.isNotEmpty) {
+                  Navigator.of(context).pop();
+                  final success = await _authProvider.resetPassword(email);
+                  if (success && mounted) {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(
+                        content: Text('Password reset email sent!'),
+                        backgroundColor: Colors.green,
+                      ),
+                    );
+                  }
+                }
+              },
+            ),
+          ],
         ),
         actions: [
           TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: const Text('OK'),
+            onPressed: () => Navigator.of(context).pop(),
+            child: const Text('Cancel'),
+          ),
+          TextButton(
+            onPressed: () async {
+              // Get email from text field - simplified for demo
+              Navigator.of(context).pop();
+              ScaffoldMessenger.of(context).showSnackBar(
+                const SnackBar(
+                  content: Text('Enter email in the field above and press Enter'),
+                ),
+              );
+            },
+            child: const Text('Send'),
           ),
         ],
       ),
@@ -135,13 +157,20 @@ class _ParentLoginState extends State<ParentLogin> {
     });
 
     try {
-      // Simulate social login delay
-      await Future.delayed(const Duration(milliseconds: 2000));
-
-      HapticFeedback.lightImpact();
-
-      if (mounted) {
-        Navigator.pushReplacementNamed(context, '/child-selection-dashboard');
+      bool success = false;
+      
+      if (provider == 'google') {
+        success = await _authProvider.signInWithGoogle();
+      }
+      
+      if (success && mounted) {
+        HapticFeedback.lightImpact();
+        // Navigation will be handled by the auth state
+        if (_authProvider.hasChildren) {
+          Navigator.pushReplacementNamed(context, '/child-selection-dashboard');
+        } else {
+          Navigator.pushReplacementNamed(context, '/child-profile-creation');
+        }
       }
     } catch (e) {
       HapticFeedback.heavyImpact();

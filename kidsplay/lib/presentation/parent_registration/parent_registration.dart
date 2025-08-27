@@ -4,6 +4,7 @@ import 'package:fluttertoast/fluttertoast.dart';
 import 'package:sizer/sizer.dart';
 
 import '../../core/app_export.dart';
+import '../../services/auth_provider.dart';
 import './widgets/app_logo_widget.dart';
 import './widgets/registration_form_widget.dart';
 import './widgets/social_registration_widget.dart';
@@ -19,23 +20,27 @@ class _ParentRegistrationState extends State<ParentRegistration> {
   final ScrollController _scrollController = ScrollController();
   bool _isLoading = false;
   bool _isSocialLoading = false;
+  final AuthProvider _authProvider = AuthProvider();
 
-  // Mock user data for demonstration
-  final List<Map<String, dynamic>> _existingUsers = [
-    {
-      "email": "parent@example.com",
-      "fullName": "Sarah Johnson",
-      "password": "Parent123!",
-    },
-    {
-      "email": "demo@kidsplay.com",
-      "fullName": "Demo Parent",
-      "password": "Demo123!",
-    },
-  ];
+  @override
+  void initState() {
+    super.initState();
+    _authProvider.addListener(_onAuthStateChanged);
+  }
+
+  void _onAuthStateChanged() {
+    if (_authProvider.errorMessage != null) {
+      _showErrorToast(_authProvider.errorMessage!);
+      setState(() {
+        _isLoading = false;
+        _isSocialLoading = false;
+      });
+    }
+  }
 
   @override
   void dispose() {
+    _authProvider.removeListener(_onAuthStateChanged);
     _scrollController.dispose();
     super.dispose();
   }
@@ -45,26 +50,19 @@ class _ParentRegistrationState extends State<ParentRegistration> {
     setState(() => _isLoading = true);
 
     try {
-      // Simulate API call delay
-      await Future.delayed(const Duration(seconds: 2));
+      final success = await _authProvider.signUp(
+        email: email,
+        password: password,
+        fullName: fullName,
+      );
 
-      // Check if email already exists
-      final existingUser = _existingUsers.any((user) =>
-          (user['email'] as String).toLowerCase() == email.toLowerCase());
-
-      if (existingUser) {
-        _showErrorToast('An account with this email already exists');
-        return;
-      }
-
-      // Simulate successful registration
-      _showSuccessToast(
-          'Account created successfully! Please check your email for verification.');
-
-      // Navigate to email verification or login screen
-      await Future.delayed(const Duration(seconds: 1));
-      if (mounted) {
-        Navigator.pushReplacementNamed(context, '/parent-login');
+      if (success && mounted) {
+        _showSuccessToast('Account created successfully!');
+        
+        await Future.delayed(const Duration(seconds: 1));
+        if (mounted) {
+          Navigator.pushReplacementNamed(context, '/child-profile-creation');
+        }
       }
     } catch (e) {
       _showErrorToast('Registration failed. Please try again.');
@@ -79,14 +77,15 @@ class _ParentRegistrationState extends State<ParentRegistration> {
     setState(() => _isSocialLoading = true);
 
     try {
-      // Simulate Google Sign-In process
-      await Future.delayed(const Duration(seconds: 2));
+      final success = await _authProvider.signInWithGoogle();
 
-      _showSuccessToast('Google sign-up successful!');
+      if (success && mounted) {
+        _showSuccessToast('Google sign-up successful!');
 
-      await Future.delayed(const Duration(seconds: 1));
-      if (mounted) {
-        Navigator.pushReplacementNamed(context, '/child-selection-dashboard');
+        await Future.delayed(const Duration(seconds: 1));
+        if (mounted) {
+          Navigator.pushReplacementNamed(context, '/child-profile-creation');
+        }
       }
     } catch (e) {
       _showErrorToast('Google sign-up failed. Please try again.');
@@ -101,15 +100,8 @@ class _ParentRegistrationState extends State<ParentRegistration> {
     setState(() => _isSocialLoading = true);
 
     try {
-      // Simulate Apple Sign-In process
-      await Future.delayed(const Duration(seconds: 2));
-
-      _showSuccessToast('Apple sign-up successful!');
-
-      await Future.delayed(const Duration(seconds: 1));
-      if (mounted) {
-        Navigator.pushReplacementNamed(context, '/child-selection-dashboard');
-      }
+      // Apple Sign-In not implemented yet, show message
+      _showErrorToast('Apple sign-in coming soon!');
     } catch (e) {
       _showErrorToast('Apple sign-up failed. Please try again.');
     } finally {
