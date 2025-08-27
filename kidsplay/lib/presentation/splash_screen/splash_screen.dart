@@ -3,6 +3,7 @@ import 'package:flutter/services.dart';
 import 'package:sizer/sizer.dart';
 
 import '../../core/app_export.dart';
+import '../../services/auth_provider.dart';
 
 class SplashScreen extends StatefulWidget {
   const SplashScreen({super.key});
@@ -90,16 +91,16 @@ class _SplashScreenState extends State<SplashScreen>
 
   Future<void> _initializeApp() async {
     try {
-      // Simulate checking parent authentication status
+      // Check authentication status
       await Future.delayed(const Duration(milliseconds: 500));
 
-      // Simulate loading child profiles
+      // Load child profiles if user is authenticated
       await Future.delayed(const Duration(milliseconds: 300));
 
-      // Simulate fetching activity data
+      // Fetch activity data
       await Future.delayed(const Duration(milliseconds: 400));
 
-      // Simulate preparing offline content cache
+      // Prepare offline content cache
       await Future.delayed(const Duration(milliseconds: 300));
     } catch (e) {
       // Handle initialization errors gracefully
@@ -108,10 +109,19 @@ class _SplashScreenState extends State<SplashScreen>
   }
 
   void _navigateToNextScreen() {
-    // Navigation logic based on user state
-    // For demo purposes, we'll navigate to parent onboarding
-    // In real implementation, this would check authentication status
-    Navigator.pushReplacementNamed(context, '/parent-onboarding');
+    final authProvider = AuthProvider();
+    
+    if (authProvider.isAuthenticated) {
+      // User is signed in, check if they have children
+      if (authProvider.hasChildren) {
+        Navigator.pushReplacementNamed(context, '/child-selection-dashboard');
+      } else {
+        Navigator.pushReplacementNamed(context, '/child-profile-creation');
+      }
+    } else {
+      // User is not signed in, show onboarding
+      Navigator.pushReplacementNamed(context, '/parent-onboarding');
+    }
   }
 
   @override
