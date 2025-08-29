@@ -5,7 +5,7 @@ import 'package:permission_handler/permission_handler.dart';
 import 'package:sizer/sizer.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:flutter_svg/flutter_svg.dart';
-import '../../core/activity_recommendation_engine.dart';
+import '../../models/activity.dart';
 import '../../widgets/custom_app_bar.dart';
 import '../../widgets/custom_bottom_bar.dart';
 import '../../theme/app_theme.dart';
@@ -48,7 +48,7 @@ class _ActivityDetailScreenState extends State<ActivityDetailScreen>
 
   void _initializeActivity() {
     // Parse activity steps from description or create default steps
-    _activitySteps = _parseActivitySteps(widget.activity.description);
+    _activitySteps = _parseActivitySteps(widget.activity.descriptionKey ?? 'No description available');
   }
 
   List<String> _parseActivitySteps(String description) {
@@ -183,7 +183,7 @@ class _ActivityDetailScreenState extends State<ActivityDetailScreen>
                   ),
                   child: Center(
                     child: CustomIconWidget(
-                      iconName: _getActivityIcon(widget.activity.activityType),
+                      iconName: _getActivityIcon(widget.activity.categories.isNotEmpty ? widget.activity.categories.first : 'general'),
                       color: isDark ? AppTheme.onPrimaryDark : AppTheme.onPrimaryLight,
                       size: 24,
                     ),
@@ -195,7 +195,7 @@ class _ActivityDetailScreenState extends State<ActivityDetailScreen>
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(
-                        widget.activity.name,
+                        widget.activity.nameKey,
                         style: theme.textTheme.headlineSmall?.copyWith(
                           fontWeight: FontWeight.w600,
                         ),
@@ -204,7 +204,7 @@ class _ActivityDetailScreenState extends State<ActivityDetailScreen>
                       ),
                       SizedBox(height: 0.5.h),
                       Text(
-                        '${widget.activity.duration} minutes',
+                        'Activity', // Placeholder since duration is not available
                         style: theme.textTheme.bodyMedium?.copyWith(
                           color: isDark ? AppTheme.textSecondaryDark : AppTheme.textSecondaryLight,
                         ),
@@ -216,7 +216,7 @@ class _ActivityDetailScreenState extends State<ActivityDetailScreen>
             ),
             SizedBox(height: 2.h),
             Text(
-              widget.activity.description,
+              widget.activity.descriptionKey ?? 'No description available',
               style: theme.textTheme.bodyLarge?.copyWith(
                 color: isDark ? AppTheme.textPrimaryDark : AppTheme.textPrimaryLight,
               ),
@@ -257,13 +257,12 @@ class _ActivityDetailScreenState extends State<ActivityDetailScreen>
               ),
             ),
             SizedBox(height: 2.h),
-            _buildInfoRow(context, 'Type', widget.activity.activityType),
-            _buildInfoRow(context, 'Energy Level', widget.activity.energyLevel),
-            _buildInfoRow(context, 'Parent Required', widget.activity.requiresParent ? 'Yes' : 'No'),
-            if (widget.activity.relatedHobbies.isNotEmpty)
-              _buildInfoRow(context, 'Related Hobbies', widget.activity.relatedHobbies.join(', ')),
-            if (widget.activity.requiredTools.isNotEmpty)
-              _buildInfoRow(context, 'Required Tools', widget.activity.requiredTools.join(', ')),
+            if (widget.activity.categories.isNotEmpty)
+              _buildInfoRow(context, 'Categories', widget.activity.categories.join(', ')),
+            if (widget.activity.hobbies.isNotEmpty)
+              _buildInfoRow(context, 'Related Hobbies', widget.activity.hobbies.join(', ')),
+            if (widget.activity.tools.isNotEmpty)
+              _buildInfoRow(context, 'Required Tools', widget.activity.tools.join(', ')),
           ],
         ),
       ),

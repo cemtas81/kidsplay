@@ -4,11 +4,32 @@ import '../../core/activity_recommendation_engine.dart';
 import '../../data/content_repository.dart';
 import '../../services/recommendation_service.dart';
 import '../../models/child_profile.dart';
+import '../../models/child.dart';
+import '../../models/activity.dart';
 import '../../widgets/custom_app_bar.dart';
 import '../progress_tracking/progress_dashboard_screen.dart';
 import '../../theme/app_theme.dart';
 import '../../widgets/custom_icon_widget.dart';
 import '../activity_detail/activity_detail_screen.dart';
+
+// Simple Achievement class for mock data
+class Achievement {
+  final String id;
+  final String name;
+  final String description;
+  final String icon;
+  final DateTime unlockedAt;
+  final String type;
+
+  Achievement({
+    required this.id,
+    required this.name,
+    required this.description,
+    required this.icon,
+    required this.unlockedAt,
+    required this.type,
+  });
+}
 
 class ChildActivityScreen extends StatefulWidget {
   final Child child;
@@ -41,10 +62,12 @@ class _ChildActivityScreenState extends State<ChildActivityScreen> {
       
       // Create child profile for recommendations
       final childProfile = ChildProfile(
-        ageInMonths: _calculateAgeInMonths(widget.child.birthDate),
-        hobbies: widget.child.hobbies,
-        skills: [], // Could be enhanced to track skills
-        tools: [], // Could be enhanced to track available tools
+        id: widget.child.id,
+        name: widget.child.name,
+        ageMonths: _calculateAgeInMonths(widget.child.birthDate),
+        hobbyIds: widget.child.hobbies.toSet(),
+        skillIds: <String>{}, // Could be enhanced to track skills
+        toolIds: <String>{}, // Could be enhanced to track available tools
       );
       
       // Get activity recommendations
@@ -409,7 +432,7 @@ class _ChildActivityScreenState extends State<ChildActivityScreen> {
                     borderRadius: BorderRadius.circular(12),
                   ),
                   child: CustomIconWidget(
-                    iconName: _getActivityIcon(nextActivity.activityType),
+                    iconName: _getActivityIcon(nextActivity.categories.isNotEmpty ? nextActivity.categories.first : 'general'),
                     color: isDark
                         ? AppTheme.onPrimaryDark
                         : AppTheme.onPrimaryLight,
@@ -549,7 +572,7 @@ class _ChildActivityScreenState extends State<ChildActivityScreen> {
               ),
               child: Center(
                 child: CustomIconWidget(
-                  iconName: _getActivityIcon(activity.activityType),
+                  iconName: _getActivityIcon(activity.categories.isNotEmpty ? activity.categories.first : 'general'),
                   color:
                       isDark ? AppTheme.onPrimaryDark : AppTheme.onPrimaryLight,
                   size: 32,
@@ -558,7 +581,7 @@ class _ChildActivityScreenState extends State<ChildActivityScreen> {
             ),
             SizedBox(height: 2.h),
             Text(
-              activity.name,
+              activity.nameKey, // Using nameKey as display name
               style: theme.textTheme.titleSmall?.copyWith(
                 fontWeight: FontWeight.w600,
               ),
@@ -567,7 +590,7 @@ class _ChildActivityScreenState extends State<ChildActivityScreen> {
             ),
             SizedBox(height: 0.5.h),
             Text(
-              activity.description,
+              activity.descriptionKey ?? 'Activity description', // Using descriptionKey with fallback
               style: theme.textTheme.bodySmall?.copyWith(
                 color: isDark
                     ? AppTheme.textSecondaryDark
@@ -588,7 +611,7 @@ class _ChildActivityScreenState extends State<ChildActivityScreen> {
                     borderRadius: BorderRadius.circular(8),
                   ),
                   child: Text(
-                    '${activity.duration} min',
+                    'Activity', // Placeholder since duration is not available in new model
                     style: theme.textTheme.bodySmall?.copyWith(
                       color: isDark
                           ? AppTheme.onPrimaryDark
