@@ -70,6 +70,10 @@ class _ParentRegistrationState extends State<ParentRegistration> {
       return 'Invalid email address format.';
     } else if (error.contains('operation-not-allowed')) {
       return 'Email/password accounts are not enabled.';
+    } else if (error.contains('network-request-failed')) {
+      return 'Network error. Please check your internet connection and try again.';
+    } else if (error.contains('Firebase not initialized')) {
+      return 'App initialization error. Please restart the app and try again.';
     } else {
       return 'Registration failed. Please try again.';
     }
