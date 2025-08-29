@@ -44,6 +44,18 @@ class _ChildSelectionDashboardState extends State<ChildSelectionDashboard> {
 
   Future<void> _loadChildren() async {
     try {
+      // Check if user is authenticated first
+      final authService = AuthService();
+      final currentUser = authService.getCurrentUser();
+      
+      if (currentUser == null || currentUser.isAnonymous) {
+        // User is not properly authenticated, redirect to login
+        if (mounted) {
+          Navigator.pushReplacementNamed(context, '/parent-login');
+        }
+        return;
+      }
+      
       final user = await AuthService.ensureInitializedAndSignedIn();
       setState(() {
         _currentUserId = user.uid;
@@ -58,6 +70,10 @@ class _ChildSelectionDashboardState extends State<ChildSelectionDashboard> {
       });
     } catch (error) {
       print('Error loading children: $error');
+      // If authentication fails, redirect to login
+      if (mounted) {
+        Navigator.pushReplacementNamed(context, '/parent-login');
+      }
     }
   }
 
