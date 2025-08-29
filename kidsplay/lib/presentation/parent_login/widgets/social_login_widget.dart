@@ -120,7 +120,10 @@ class _SocialLoginButton extends StatelessWidget {
     return GestureDetector(
       onTap: isLoading ? null : onTap,
       child: Container(
-        height: 7.h,
+        constraints: BoxConstraints(
+          minHeight: 7.h,
+        ),
+        padding: EdgeInsets.symmetric(vertical: 1.h),
         decoration: BoxDecoration(
           color: backgroundColor,
           borderRadius: BorderRadius.circular(12),
@@ -155,7 +158,7 @@ class _SocialLoginButton extends StatelessWidget {
                     color: textColor,
                     size: 20,
                   ),
-                  SizedBox(height: 0.3.h),
+                  SizedBox(height: 0.2.h),
                   Text(
                     label,
                     style: Theme.of(context).textTheme.bodySmall?.copyWith(
