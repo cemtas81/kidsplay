@@ -87,7 +87,7 @@ class _ParentLoginState extends State<ParentLogin> {
     } else if (error.contains('operation-not-allowed')) {
       return 'Email/password sign-in is not enabled. Please contact support.';
     } else if (error.contains('configuration-not-found')) {
-      return 'Authentication service is currently unavailable. For demo purposes, use:\n\nEmail: parent@kidsplay.com\nPassword: parent123';
+      return 'Authentication service is currently unavailable. For demo purposes, use:\n\nEmail: parent@kidsplay.com\nPassword: Parent123';
     } else {
       return 'Login failed. Please check your credentials and try again.';
     }
@@ -115,7 +115,7 @@ class _ParentLoginState extends State<ParentLogin> {
           'Password reset functionality will be implemented in the next version. '
           'For demo purposes, use:\n\n'
           'Email: parent@kidsplay.com\n'
-          'Password: parent123',
+          'Password: Parent123',
         ),
         actions: [
           TextButton(

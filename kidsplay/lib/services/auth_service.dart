@@ -29,7 +29,7 @@ class AuthService {
 
   // Demo credentials for testing
   static const String _demoEmail = 'parent@kidsplay.com';
-  static const String _demoPassword = 'parent123';
+  static const String _demoPassword = 'Parent123';
   
   // Check if using demo credentials
   bool _isDemoCredentials(String email, String password) {

@@ -75,7 +75,7 @@ class _ParentRegistrationState extends State<ParentRegistration> {
     } else if (error.contains('Firebase not initialized')) {
       return 'App initialization error. Please restart the app and try again.';
     } else if (error.contains('configuration-not-found')) {
-      return 'Registration service is currently unavailable. For demo purposes, try signing in with:\n\nEmail: parent@kidsplay.com\nPassword: parent123';
+      return 'Registration service is currently unavailable. For demo purposes, try signing in with:\n\nEmail: parent@kidsplay.com\nPassword: Parent123';
     } else {
       return 'Registration failed. Please try again.';
     }
