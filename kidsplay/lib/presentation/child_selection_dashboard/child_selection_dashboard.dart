@@ -447,35 +447,11 @@ class _ChildSelectionDashboardState extends State<ChildSelectionDashboard> {
     HapticFeedback.lightImpact();
     // Navigate to activity selection for this child
     final childData = _createChildFromMap(child);
-    // Create a sample activity for demonstration
-    final sampleActivity = Activity(
-      id: 'sample_activity_1',
-      name: 'Creative Drawing',
-      description: 'Draw your favorite animal using colors and imagination',
-      relatedHobbies: ['Drawing', 'Art'],
-      requiredTools: ['Paper', 'Crayons'],
-      duration: 30,
-      minAge: 2,
-      maxAge: 6,
-      activityType: 'creative',
-      requiresParent: false,
-      needsCamera: false,
-      needsCameraEvaluation: false,
-      energyLevel: 'low',
-      hasAudioInstructions: true,
-      hasVisualInstructions: true,
-      hasPoints: true,
-      allowsResultUpload: true,
-      expectedOutput: 'image',
-      needsParentFeedback: false,
-    );
+    // Navigate to the child's activity screen which shows recommendations
     Navigator.push(
       context,
       MaterialPageRoute(
-        builder: (context) => ActivityDetailScreen(
-          activity: sampleActivity,
-          child: childData,
-        ),
+        builder: (context) => ChildActivityScreen(child: childData),
       ),
     );
   }
@@ -541,16 +517,26 @@ class _ChildSelectionDashboardState extends State<ChildSelectionDashboard> {
     // Show confirmation dialog and archive profile
     _showConfirmationDialog(
       'Archive Profile',
-      'Are you sure you want to archive ${child["name"]}\'s profile? This action can be undone later.',
-      () {
-        // TODO: Implement proper archiving by removing from database
-        // For now, just show success message
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('${child["name"]}\'s profile archived successfully'),
-            backgroundColor: Theme.of(context).colorScheme.primary,
-          ),
-        );
+      'Are you sure you want to archive ${child["name"]}\'s profile? This will remove the profile from the app.',
+      () async {
+        try {
+          // Delete the child from the database
+          await _childRepository.deleteChild(_currentUserId!, child["id"]);
+          
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text('${child["name"]}\'s profile archived successfully'),
+              backgroundColor: Theme.of(context).colorScheme.primary,
+            ),
+          );
+        } catch (error) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text('Failed to archive profile: $error'),
+              backgroundColor: Theme.of(context).colorScheme.error,
+            ),
+          );
+        }
       },
     );
   }
@@ -597,27 +583,29 @@ class _ChildSelectionDashboardState extends State<ChildSelectionDashboard> {
 
   void _navigateToProgressDashboard() {
     HapticFeedback.lightImpact();
-    // Create a sample child for the progress dashboard
-    final sampleChild = Child(
-      id: 'sample_child_1',
-      name: 'Emma',
-      surname: 'Rodriguez',
-      birthDate: DateTime.now().subtract(Duration(days: 4 * 365)),
-      gender: 'Female',
-      hobbies: ['Drawing', 'Dancing', 'Building blocks'],
-      hasScreenDependency: true,
-      screenDependencyLevel: 'normal',
-      usesScreenDuringMeals: false,
-      wantsToChange: true,
-      dailyPlayTime: '1h',
-      parentIds: ['parent1'],
-      relationshipToParent: 'mother',
-      hasCameraPermission: true,
-    );
+    
+    // Check if we have children
+    if (_children.isEmpty) {
+      // No children available, suggest adding a child first
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Please add a child profile first to view progress'),
+          backgroundColor: Theme.of(context).colorScheme.error,
+          action: SnackBarAction(
+            label: 'Add Child',
+            onPressed: () => Navigator.pushNamed(context, '/child-profile-creation'),
+          ),
+        ),
+      );
+      return;
+    }
+    
+    // Use the first child for the progress dashboard
+    final firstChild = _children.first;
     Navigator.push(
       context,
       MaterialPageRoute(
-        builder: (context) => ProgressDashboardScreen(child: sampleChild),
+        builder: (context) => ProgressDashboardScreen(child: firstChild),
       ),
     );
   }

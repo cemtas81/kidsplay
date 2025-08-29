@@ -4,6 +4,8 @@ import 'package:sizer/sizer.dart';
 
 import '../../core/app_export.dart';
 import '../../widgets/custom_icon_widget.dart';
+import '../../services/auth_service.dart';
+import '../../repositories/child_repository.dart';
 import './widgets/biometric_auth_widget.dart';
 import './widgets/login_form_widget.dart';
 import './widgets/login_header_widget.dart';
@@ -19,23 +21,9 @@ class ParentLogin extends StatefulWidget {
 
 class _ParentLoginState extends State<ParentLogin> {
   bool _isLoading = false;
-  bool _isBiometricAvailable = true; // Mock availability
+  bool _isBiometricAvailable = false; // Disabled until local_auth package is properly integrated
   String? _errorMessage;
   final _scrollController = ScrollController();
-
-  // Mock credentials for demo
-  final Map<String, dynamic> _mockCredentials = {
-    "parent@kidsplay.com": {
-      "password": "parent123",
-      "name": "Sarah Johnson",
-      "hasChildren": true,
-    },
-    "demo@kidsplay.com": {
-      "password": "demo123",
-      "name": "Demo Parent",
-      "hasChildren": false,
-    },
-  };
 
   @override
   void dispose() {
@@ -50,40 +38,27 @@ class _ParentLoginState extends State<ParentLogin> {
     });
 
     try {
-      // Simulate API call delay
-      await Future.delayed(const Duration(milliseconds: 1500));
-
-      // Check mock credentials
-      if (_mockCredentials.containsKey(email.toLowerCase())) {
-        final userCredentials = _mockCredentials[email.toLowerCase()]!;
-        if (userCredentials["password"] == password) {
-          // Successful login
-          HapticFeedback.lightImpact();
-
-          if (mounted) {
-            // Navigate based on user state
-            if (userCredentials["hasChildren"] == true) {
-              Navigator.pushReplacementNamed(
-                  context, '/child-selection-dashboard');
-            } else {
-              Navigator.pushReplacementNamed(
-                  context, '/child-profile-creation');
-            }
-          }
-          return;
+      // Use Firebase Authentication
+      final authService = AuthService();
+      final user = await authService.signInWithEmailAndPassword(email, password);
+      
+      if (user != null && mounted) {
+        HapticFeedback.lightImpact();
+        
+        // Check if user has children to determine navigation
+        final childRepository = ChildRepository();
+        final children = await childRepository.watchChildrenOf(user.uid).first;
+        
+        if (children.isNotEmpty) {
+          Navigator.pushReplacementNamed(context, '/child-selection-dashboard');
+        } else {
+          Navigator.pushReplacementNamed(context, '/child-profile-creation');
         }
       }
-
-      // Invalid credentials
+    } catch (error) {
       HapticFeedback.heavyImpact();
       setState(() {
-        _errorMessage = 'Invalid email or password. Please try again.';
-      });
-    } catch (e) {
-      HapticFeedback.heavyImpact();
-      setState(() {
-        _errorMessage =
-            'Login failed. Please check your connection and try again.';
+        _errorMessage = _getErrorMessage(error.toString());
       });
     } finally {
       if (mounted) {
@@ -91,6 +66,22 @@ class _ParentLoginState extends State<ParentLogin> {
           _isLoading = false;
         });
       }
+    }
+  }
+
+  String _getErrorMessage(String error) {
+    if (error.contains('user-not-found')) {
+      return 'No account found with this email address.';
+    } else if (error.contains('wrong-password')) {
+      return 'Incorrect password. Please try again.';
+    } else if (error.contains('invalid-email')) {
+      return 'Invalid email address format.';
+    } else if (error.contains('user-disabled')) {
+      return 'This account has been disabled.';
+    } else if (error.contains('too-many-requests')) {
+      return 'Too many failed login attempts. Please try again later.';
+    } else {
+      return 'Login failed. Please check your credentials and try again.';
     }
   }
 

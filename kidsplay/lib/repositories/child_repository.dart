@@ -21,4 +21,8 @@ class ChildRepository {
     // For simplicity: set parentIds to only [ownerUid]
     await _col(ownerUid).doc(childId).set({'parentIds': [ownerUid]}, SetOptions(merge: true));
   }
+
+  Future<void> deleteChild(String uid, String childId) async {
+    await _col(uid).doc(childId).delete();
+  }
 }
