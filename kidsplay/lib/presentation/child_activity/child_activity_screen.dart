@@ -4,6 +4,8 @@ import '../../core/activity_recommendation_engine.dart';
 import '../../data/content_repository.dart';
 import '../../services/recommendation_service.dart';
 import '../../models/child_profile.dart';
+import '../../models/child.dart';
+import '../../models/activity.dart';
 import '../../widgets/custom_app_bar.dart';
 import '../progress_tracking/progress_dashboard_screen.dart';
 import '../../theme/app_theme.dart';
@@ -41,10 +43,12 @@ class _ChildActivityScreenState extends State<ChildActivityScreen> {
       
       // Create child profile for recommendations
       final childProfile = ChildProfile(
-        ageInMonths: _calculateAgeInMonths(widget.child.birthDate),
-        hobbies: widget.child.hobbies,
-        skills: [], // Could be enhanced to track skills
-        tools: [], // Could be enhanced to track available tools
+        id: widget.child.id,
+        name: widget.child.name,
+        ageMonths: _calculateAgeInMonths(widget.child.birthDate),
+        hobbyIds: widget.child.hobbies.toSet(),
+        skillIds: <String>{}, // Could be enhanced to track skills
+        toolIds: <String>{}, // Could be enhanced to track available tools
       );
       
       // Get activity recommendations

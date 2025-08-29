@@ -1,5 +1,6 @@
 import 'dart:async';
-import 'package:flutter/services.dart' show rootBundle, AssetBundle, FlutterError;
+import 'package:flutter/services.dart' show rootBundle, AssetBundle;
+import 'package:flutter/foundation.dart' show FlutterError;
 
 import '../models/hobby.dart';
 import '../models/skill.dart';

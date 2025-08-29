@@ -1,4 +1,7 @@
 import 'dart:math';
+import '../models/activity.dart';
+import '../models/child.dart';
+import '../models/tool.dart';
 
 class ActivityRecommendationEngine {
   static List<Activity> getRecommendedActivities({
@@ -67,8 +70,17 @@ class ActivityRecommendationEngine {
   }
 
   static bool _isAgeCompatible(Activity activity, Child child) {
-    int childAge = _calculateAge(child.birthDate);
-    return activity.minAge <= childAge && childAge <= activity.maxAge;
+    int childAgeMonths = _calculateAgeInMonths(child.birthDate);
+    
+    // If no age constraints, consider compatible
+    if (activity.minAgeMonths == null && activity.maxAgeMonths == null) {
+      return true;
+    }
+    
+    bool minAgeOk = activity.minAgeMonths == null || childAgeMonths >= activity.minAgeMonths!;
+    bool maxAgeOk = activity.maxAgeMonths == null || childAgeMonths <= activity.maxAgeMonths!;
+    
+    return minAgeOk && maxAgeOk;
   }
 
   static double _calculateHobbyMatch(Activity activity, Child child) {
@@ -76,7 +88,7 @@ class ActivityRecommendationEngine {
 
     int matchingHobbies = 0;
     for (String hobby in child.hobbies) {
-      if (activity.relatedHobbies.contains(hobby)) {
+      if (activity.hobbies.contains(hobby)) {
         matchingHobbies++;
       }
     }
@@ -85,31 +97,31 @@ class ActivityRecommendationEngine {
   }
 
   static double _calculateToolAvailability(Activity activity, List<Tool> availableTools) {
-    if (activity.requiredTools.isEmpty) return 1.0;
+    if (activity.tools.isEmpty) return 1.0;
 
     int availableRequiredTools = 0;
-    for (String requiredTool in activity.requiredTools) {
-      if (availableTools.any((tool) => tool.name.toLowerCase().contains(requiredTool.toLowerCase()))) {
+    for (String requiredTool in activity.tools) {
+      if (availableTools.any((tool) => tool.nameKey.toLowerCase().contains(requiredTool.toLowerCase()) ||
+                                       tool.id == requiredTool)) {
         availableRequiredTools++;
       }
     }
 
-    return availableRequiredTools / activity.requiredTools.length;
+    return availableRequiredTools / activity.tools.length;
   }
 
   static bool _isParentCompatible(Activity activity, bool parentAvailable) {
-    if (activity.requiresParent && !parentAvailable) return false;
+    // Since the new Activity model doesn't have requiresParent field,
+    // we'll assume all activities are compatible for now
+    // This could be enhanced by adding metadata to the Activity model
     return true;
   }
 
   static bool _isEnergyLevelCompatible(Activity activity, Child child) {
-    // Simple energy level matching based on screen dependency
-    if (child.screenDependencyLevel == 'high' && activity.energyLevel == 'high') {
-      return true;
-    } else if (child.screenDependencyLevel == 'low' && activity.energyLevel == 'low') {
-      return true;
-    }
-    return activity.energyLevel == 'medium';
+    // Since the new Activity model doesn't have energyLevel field,
+    // we'll assume all activities are compatible for now
+    // This could be enhanced by adding energy level categorization
+    return true;
   }
 
   static int _calculateAge(DateTime birthDate) {
@@ -121,14 +133,22 @@ class ActivityRecommendationEngine {
     return age;
   }
 
+  static int _calculateAgeInMonths(DateTime birthDate) {
+    DateTime now = DateTime.now();
+    int months = (now.year - birthDate.year) * 12 + (now.month - birthDate.month);
+    if (now.day < birthDate.day) {
+      months--;
+    }
+    return months;
+  }
+
   static List<Activity> getRandomActivities({
     required List<Activity> allActivities,
     required Child child,
     int count = 3,
   }) {
     List<Activity> suitableActivities = allActivities.where((activity) {
-      int childAge = _calculateAge(child.birthDate);
-      return activity.minAge <= childAge && childAge <= activity.maxAge;
+      return _isAgeCompatible(activity, child);
     }).toList();
 
     if (suitableActivities.length <= count) {
@@ -156,96 +176,4 @@ class ActivityScore {
   final double score;
 
   ActivityScore({required this.activity, required this.score});
-}
-
-class Activity {
-  final String id;
-  final String name;
-  final String description;
-  final List<String> relatedHobbies;
-  final List<String> requiredTools;
-  final int duration; // in minutes
-  final int minAge;
-  final int maxAge;
-  final String activityType; // creative, physical, musical, educational, free_play
-  final bool requiresParent;
-  final bool needsCamera;
-  final bool needsCameraEvaluation;
-  final String energyLevel; // low, medium, high
-  final bool hasAudioInstructions;
-  final bool hasVisualInstructions;
-  final bool hasPoints;
-  final bool allowsResultUpload;
-  final String expectedOutput; // none, image, video, audio
-  final bool needsParentFeedback;
-
-  Activity({
-    required this.id,
-    required this.name,
-    required this.description,
-    required this.relatedHobbies,
-    required this.requiredTools,
-    required this.duration,
-    required this.minAge,
-    required this.maxAge,
-    required this.activityType,
-    required this.requiresParent,
-    required this.needsCamera,
-    required this.needsCameraEvaluation,
-    required this.energyLevel,
-    required this.hasAudioInstructions,
-    required this.hasVisualInstructions,
-    required this.hasPoints,
-    required this.allowsResultUpload,
-    required this.expectedOutput,
-    required this.needsParentFeedback,
-  });
-}
-
-class Child {
-  final String id;
-  final String name;
-  final String surname;
-  final DateTime birthDate;
-  final String gender;
-  final List<String> hobbies;
-  final bool hasScreenDependency;
-  final String screenDependencyLevel; // low, normal, high
-  final bool usesScreenDuringMeals;
-  final bool wantsToChange;
-  final String dailyPlayTime; // 15min, 30min, 1h, 2h, 3h+
-  final List<String> parentIds;
-  final String relationshipToParent; // mother, father, guardian, legal_representative
-  final bool hasCameraPermission;
-
-  Child({
-    required this.id,
-    required this.name,
-    required this.surname,
-    required this.birthDate,
-    required this.gender,
-    required this.hobbies,
-    required this.hasScreenDependency,
-    required this.screenDependencyLevel,
-    required this.usesScreenDuringMeals,
-    required this.wantsToChange,
-    required this.dailyPlayTime,
-    required this.parentIds,
-    required this.relationshipToParent,
-    required this.hasCameraPermission,
-  });
-}
-
-class Tool {
-  final String id;
-  final String name;
-  final String imageUrl;
-  final String category; // kitchen, toys, art, etc.
-
-  Tool({
-    required this.id,
-    required this.name,
-    required this.imageUrl,
-    required this.category,
-  });
 }
