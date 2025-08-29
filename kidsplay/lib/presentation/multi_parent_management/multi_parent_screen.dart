@@ -37,17 +37,47 @@ class _MultiParentScreenState extends State<MultiParentScreen>
   }
 
   Future<void> _bootstrap() async {
-    final user = await AuthService.ensureInitializedAndSignedIn();
-    setState(() {
-      _uid = user.uid;
-      _invitedByName = 'You'; // replace with profile name if available
-    });
-    // prefetch children for invite dialog convenience
-    _childRepo.watchChildrenOf(user.uid).listen((chs) {
+    try {
+      // Check if user is authenticated first
+      final authService = AuthService();
+      final currentUser = authService.getCurrentUser();
+      
+      if (currentUser == null || currentUser.isAnonymous) {
+        // User is not properly authenticated, redirect to login
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: const Text('Please login first to access multi-parent management'),
+              backgroundColor: Theme.of(context).colorScheme.error,
+            ),
+          );
+          Navigator.pushReplacementNamed(context, '/parent-login');
+        }
+        return;
+      }
+      
+      final user = await AuthService.ensureInitializedAndSignedIn();
       setState(() {
-        _children = chs;
+        _uid = user.uid;
+        _invitedByName = 'You'; // replace with profile name if available
       });
-    });
+      // prefetch children for invite dialog convenience
+      _childRepo.watchChildrenOf(user.uid).listen((chs) {
+        setState(() {
+          _children = chs;
+        });
+      });
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Authentication error: ${e.toString()}'),
+            backgroundColor: Theme.of(context).colorScheme.error,
+          ),
+        );
+        Navigator.pushReplacementNamed(context, '/parent-login');
+      }
+    }
   }
 
   @override
@@ -664,9 +694,43 @@ class _MultiParentScreenState extends State<MultiParentScreen>
 
   void _showInviteParentDialog() {
     final theme = Theme.of(context);
+    
+    // Check if there are any children to invite parents for
+    if (_children.isEmpty) {
+      showDialog(
+        context: context,
+        builder: (context) => AlertDialog(
+          title: Text('No Children Found',
+              style: theme.textTheme.titleMedium
+                  ?.copyWith(fontWeight: FontWeight.bold)),
+          content: const Text(
+            'You need to create at least one child profile before you can invite other parents.',
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(context),
+              child: Text('Cancel', style: theme.textTheme.bodyMedium),
+            ),
+            ElevatedButton(
+              onPressed: () {
+                Navigator.pop(context);
+                Navigator.pushNamed(context, '/child-profile-creation');
+              },
+              style: ElevatedButton.styleFrom(
+                backgroundColor: theme.colorScheme.primary,
+              ),
+              child: Text('Create Child Profile',
+                  style: theme.textTheme.bodyMedium?.copyWith(color: Colors.white)),
+            ),
+          ],
+        ),
+      );
+      return;
+    }
+    
     final emailCtrl = TextEditingController();
     final relCtrl = TextEditingController();
-    String? selectedChildId = _children.isNotEmpty ? _children.first.id : null;
+    String? selectedChildId = _children.first.id;
     final perms = <String, bool>{
       'view': true,
       'edit': true,

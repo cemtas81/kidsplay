@@ -166,7 +166,29 @@ class _ChildProfileCreationState extends State<ChildProfileCreation>
 
   void _completeProfile() async {
     try {
-      // Get current user
+      // Check if user is authenticated first
+      final authService = AuthService();
+      final currentUser = authService.getCurrentUser();
+      
+      if (currentUser == null || currentUser.isAnonymous) {
+        // User is not properly authenticated, redirect to login
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: const Text('Please login first to create a child profile'),
+              backgroundColor: AppTheme.lightTheme.colorScheme.error,
+              behavior: SnackBarBehavior.floating,
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(12),
+              ),
+            ),
+          );
+          Navigator.pushReplacementNamed(context, '/parent-login');
+        }
+        return;
+      }
+      
+      // Get current user - now we know they're authenticated
       final user = await AuthService.ensureInitializedAndSignedIn();
       
       // Create Child object with form data

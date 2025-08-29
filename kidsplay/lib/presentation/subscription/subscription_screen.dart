@@ -34,18 +34,37 @@ class _SubscriptionScreenState extends State<SubscriptionScreen> {
   }
 
   Future<void> _bootstrap() async {
-    final user = await AuthService.ensureInitializedAndSignedIn();
-    setState(() {
-      _uid = user.uid;
-    });
+    try {
+      // Check if user is authenticated first
+      final authService = AuthService();
+      final currentUser = authService.getCurrentUser();
+      
+      if (currentUser == null || currentUser.isAnonymous) {
+        // User is not properly authenticated, redirect to login
+        if (mounted) {
+          Navigator.pushReplacementNamed(context, '/parent-login');
+        }
+        return;
+      }
+      
+      final user = await AuthService.ensureInitializedAndSignedIn();
+      setState(() {
+        _uid = user.uid;
+      });
 
-    _childRepo.watchChildrenOf(user.uid).listen((kids) {
-      setState(() => _children = kids);
-    });
+      _childRepo.watchChildrenOf(user.uid).listen((kids) {
+        setState(() => _children = kids);
+      });
 
-    _subRepo.watchCurrentPlan(user.uid).listen((plan) {
-      setState(() => _currentPlan = plan ?? SubscriptionPlan.byId('free'));
-    });
+      _subRepo.watchCurrentPlan(user.uid).listen((plan) {
+        setState(() => _currentPlan = plan ?? SubscriptionPlan.byId('free'));
+      });
+    } catch (error) {
+      // If authentication fails, redirect to login
+      if (mounted) {
+        Navigator.pushReplacementNamed(context, '/parent-login');
+      }
+    }
   }
 
   @override

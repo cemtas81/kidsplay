@@ -16,8 +16,7 @@ class AuthService {
     await _ensureInitialized();
     final auth = FirebaseAuth.instance;
     if (auth.currentUser == null) {
-      final cred = await auth.signInAnonymously();
-      return cred.user!;
+      throw Exception('No authenticated user found. Please login first.');
     }
     return auth.currentUser!;
   }
@@ -60,5 +59,22 @@ class AuthService {
 
   User? getCurrentUser() {
     return FirebaseAuth.instance.currentUser;
+  }
+
+  // Check if user is authenticated (not anonymous)
+  bool isAuthenticated() {
+    final user = FirebaseAuth.instance.currentUser;
+    return user != null && !user.isAnonymous;
+  }
+
+  // Get current user safely with error handling
+  static Future<User?> getCurrentUserSafely() async {
+    await _ensureInitialized();
+    return FirebaseAuth.instance.currentUser;
+  }
+
+  // Stream of authentication state changes
+  Stream<User?> get authStateChanges {
+    return FirebaseAuth.instance.authStateChanges();
   }
 }
