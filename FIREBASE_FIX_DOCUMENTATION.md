@@ -74,7 +74,7 @@ flutter run
 
 #### 2. **Demo Login Test**
 - Email: `parent@kidsplay.com`
-- Password: `parent123`
+- Password: `Parent123`
 - Should either:
   - ✅ Log in successfully (if Firebase is working)
   - ❌ Show helpful error message (if Firebase is not accessible)
@@ -136,7 +136,7 @@ flutter run
 
 For testing purposes, the app includes demo credentials:
 - **Email**: `parent@kidsplay.com`  
-- **Password**: `parent123`
+- **Password**: `Parent123`
 
 These credentials have enhanced handling that provides better debugging information whether Firebase is working or not.
 
