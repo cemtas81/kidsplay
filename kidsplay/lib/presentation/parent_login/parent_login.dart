@@ -80,6 +80,12 @@ class _ParentLoginState extends State<ParentLogin> {
       return 'This account has been disabled.';
     } else if (error.contains('too-many-requests')) {
       return 'Too many failed login attempts. Please try again later.';
+    } else if (error.contains('network-request-failed')) {
+      return 'Network error. Please check your internet connection and try again.';
+    } else if (error.contains('Firebase not initialized')) {
+      return 'App initialization error. Please restart the app and try again.';
+    } else if (error.contains('operation-not-allowed')) {
+      return 'Email/password sign-in is not enabled. Please contact support.';
     } else {
       return 'Login failed. Please check your credentials and try again.';
     }
