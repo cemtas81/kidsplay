@@ -124,15 +124,6 @@ class ActivityRecommendationEngine {
     return true;
   }
 
-  static int _calculateAge(DateTime birthDate) {
-    DateTime now = DateTime.now();
-    int age = now.year - birthDate.year;
-    if (now.month < birthDate.month || (now.month == birthDate.month && now.day < birthDate.day)) {
-      age--;
-    }
-    return age;
-  }
-
   static int _calculateAgeInMonths(DateTime birthDate) {
     DateTime now = DateTime.now();
     int months = (now.year - birthDate.year) * 12 + (now.month - birthDate.month);
