@@ -1,12 +1,26 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_core/firebase_core.dart';
 
 class FirestoreService {
   FirestoreService._();
   static final instance = FirestoreService._();
-  final _db = FirebaseFirestore.instance;
+  
+  FirebaseFirestore get _db {
+    if (Firebase.apps.isEmpty) {
+      throw Exception('Firebase not initialized. Please ensure Firebase.initializeApp() is called in main.dart');
+    }
+    return FirebaseFirestore.instance;
+  }
 
-  CollectionReference<Map<String, dynamic>> col(String path) => _db.collection(path);
-  DocumentReference<Map<String, dynamic>> doc(String path) => _db.doc(path);
+  CollectionReference<Map<String, dynamic>> col(String path) {
+    print('🗄️ Accessing Firestore collection: $path');
+    return _db.collection(path);
+  }
+  
+  DocumentReference<Map<String, dynamic>> doc(String path) {
+    print('📄 Accessing Firestore document: $path');
+    return _db.doc(path);
+  }
 
   static DateTime? toDate(dynamic v) {
     if (v == null) return null;
