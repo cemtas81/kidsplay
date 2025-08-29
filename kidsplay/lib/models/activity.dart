@@ -9,6 +9,10 @@ class Activity {
   final int? minAgeMonths;
   final int? maxAgeMonths;
 
+  // Activity properties
+  final bool needsCamera;
+  final int? duration; // duration in minutes
+
   // Associations (IDs)
   final List<String> hobbies;
   final List<String> skills;
@@ -21,11 +25,17 @@ class Activity {
     this.descriptionKey,
     this.minAgeMonths,
     this.maxAgeMonths,
+    this.needsCamera = false,
+    this.duration,
     this.hobbies = const [],
     this.skills = const [],
     this.tools = const [],
     this.categories = const [],
   });
+
+  // Convenience getters for backward compatibility
+  String get name => nameKey;
+  String get description => descriptionKey ?? '';
 
   static List<String> _readStringList(Map<String, dynamic> json, List<String> keys) {
     for (final k in keys) {
@@ -44,6 +54,7 @@ class Activity {
     final cats    = _readStringList(json, ['categories', 'category']);
 
     int? _toInt(dynamic v) => (v is num) ? v.toInt() : null;
+    bool _toBool(dynamic v) => v == true || v == 'true' || v == 1;
 
     return Activity(
       id: json['id'] as String,
@@ -51,6 +62,8 @@ class Activity {
       descriptionKey: json['descriptionKey'] as String? ?? json['descKey'] as String?,
       minAgeMonths: _toInt(json['minAgeMonths'] ?? json['minAge'] ?? json['min_age_months']),
       maxAgeMonths: _toInt(json['maxAgeMonths'] ?? json['maxAge'] ?? json['max_age_months']),
+      needsCamera: _toBool(json['needsCamera'] ?? json['requiresCamera'] ?? json['camera'] ?? false),
+      duration: _toInt(json['duration'] ?? json['durationMinutes'] ?? json['duration_minutes']),
       hobbies: hobbies,
       skills: skills,
       tools: tools,

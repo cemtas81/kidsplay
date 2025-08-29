@@ -4,6 +4,7 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:fl_chart/fl_chart.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import '../../core/activity_recommendation_engine.dart';
+import '../../models/child.dart';
 import '../../widgets/custom_app_bar.dart';
 import '../../theme/app_theme.dart';
 import '../../widgets/custom_icon_widget.dart';
