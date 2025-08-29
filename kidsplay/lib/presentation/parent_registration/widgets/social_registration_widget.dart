@@ -58,7 +58,7 @@ class SocialRegistrationWidget extends StatelessWidget {
             // Google Sign Up Button
             SizedBox(
               width: double.infinity,
-              height: 6.h,
+              height: 7.h,
               child: OutlinedButton(
                 onPressed: isLoading ? null : onGoogleSignUp,
                 style: OutlinedButton.styleFrom(
@@ -100,7 +100,7 @@ class SocialRegistrationWidget extends StatelessWidget {
             if (defaultTargetPlatform == TargetPlatform.iOS || kIsWeb) ...[
               SizedBox(
                 width: double.infinity,
-                height: 6.h,
+                height: 7.h,
                 child: OutlinedButton(
                   onPressed: isLoading ? null : onAppleSignUp,
                   style: OutlinedButton.styleFrom(
