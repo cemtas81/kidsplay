@@ -86,6 +86,8 @@ class _ParentLoginState extends State<ParentLogin> {
       return 'App initialization error. Please restart the app and try again.';
     } else if (error.contains('operation-not-allowed')) {
       return 'Email/password sign-in is not enabled. Please contact support.';
+    } else if (error.contains('configuration-not-found')) {
+      return 'Authentication service is currently unavailable. For demo purposes, use:\n\nEmail: parent@kidsplay.com\nPassword: parent123';
     } else {
       return 'Login failed. Please check your credentials and try again.';
     }
