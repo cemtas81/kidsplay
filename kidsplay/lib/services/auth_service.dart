@@ -26,4 +26,39 @@ class AuthService {
     final user = await ensureInitializedAndSignedIn();
     return user.uid;
   }
+
+  // Email/Password Authentication methods
+  Future<User?> signInWithEmailAndPassword(String email, String password) async {
+    await _ensureInitialized();
+    try {
+      final credential = await FirebaseAuth.instance.signInWithEmailAndPassword(
+        email: email,
+        password: password,
+      );
+      return credential.user;
+    } catch (e) {
+      rethrow;
+    }
+  }
+
+  Future<User?> createUserWithEmailAndPassword(String email, String password) async {
+    await _ensureInitialized();
+    try {
+      final credential = await FirebaseAuth.instance.createUserWithEmailAndPassword(
+        email: email,
+        password: password,
+      );
+      return credential.user;
+    } catch (e) {
+      rethrow;
+    }
+  }
+
+  Future<void> signOut() async {
+    await FirebaseAuth.instance.signOut();
+  }
+
+  User? getCurrentUser() {
+    return FirebaseAuth.instance.currentUser;
+  }
 }

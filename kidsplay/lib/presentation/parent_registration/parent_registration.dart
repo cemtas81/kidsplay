@@ -4,6 +4,7 @@ import 'package:fluttertoast/fluttertoast.dart';
 import 'package:sizer/sizer.dart';
 
 import '../../core/app_export.dart';
+import '../../services/auth_service.dart';
 import './widgets/app_logo_widget.dart';
 import './widgets/registration_form_widget.dart';
 import './widgets/social_registration_widget.dart';
@@ -20,20 +21,6 @@ class _ParentRegistrationState extends State<ParentRegistration> {
   bool _isLoading = false;
   bool _isSocialLoading = false;
 
-  // Mock user data for demonstration
-  final List<Map<String, dynamic>> _existingUsers = [
-    {
-      "email": "parent@example.com",
-      "fullName": "Sarah Johnson",
-      "password": "Parent123!",
-    },
-    {
-      "email": "demo@kidsplay.com",
-      "fullName": "Demo Parent",
-      "password": "Demo123!",
-    },
-  ];
-
   @override
   void dispose() {
     _scrollController.dispose();
@@ -45,33 +32,46 @@ class _ParentRegistrationState extends State<ParentRegistration> {
     setState(() => _isLoading = true);
 
     try {
-      // Simulate API call delay
-      await Future.delayed(const Duration(seconds: 2));
+      // Use Firebase Authentication for registration
+      final authService = AuthService();
+      final user = await authService.createUserWithEmailAndPassword(email, password);
+      
+      if (user != null) {
+        // Update the user profile with the full name
+        await user.updateDisplayName(fullName);
+        
+        // Send email verification
+        await user.sendEmailVerification();
+        
+        _showSuccessToast(
+            'Account created successfully! Please check your email for verification.');
 
-      // Check if email already exists
-      final existingUser = _existingUsers.any((user) =>
-          (user['email'] as String).toLowerCase() == email.toLowerCase());
-
-      if (existingUser) {
-        _showErrorToast('An account with this email already exists');
-        return;
+        // Navigate to email verification or login screen
+        await Future.delayed(const Duration(seconds: 1));
+        if (mounted) {
+          Navigator.pushReplacementNamed(context, '/parent-login');
+        }
       }
-
-      // Simulate successful registration
-      _showSuccessToast(
-          'Account created successfully! Please check your email for verification.');
-
-      // Navigate to email verification or login screen
-      await Future.delayed(const Duration(seconds: 1));
-      if (mounted) {
-        Navigator.pushReplacementNamed(context, '/parent-login');
-      }
-    } catch (e) {
-      _showErrorToast('Registration failed. Please try again.');
+    } catch (error) {
+      _showErrorToast(_getRegistrationErrorMessage(error.toString()));
     } finally {
       if (mounted) {
         setState(() => _isLoading = false);
       }
+    }
+  }
+
+  String _getRegistrationErrorMessage(String error) {
+    if (error.contains('email-already-in-use')) {
+      return 'An account with this email already exists.';
+    } else if (error.contains('weak-password')) {
+      return 'Password is too weak. Please choose a stronger password.';
+    } else if (error.contains('invalid-email')) {
+      return 'Invalid email address format.';
+    } else if (error.contains('operation-not-allowed')) {
+      return 'Email/password accounts are not enabled.';
+    } else {
+      return 'Registration failed. Please try again.';
     }
   }
 
