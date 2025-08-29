@@ -1,6 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:sizer/sizer.dart';
 import '../../core/activity_recommendation_engine.dart';
+import '../../data/content_repository.dart';
+import '../../services/recommendation_service.dart';
+import '../../models/child_profile.dart';
 import '../../widgets/custom_app_bar.dart';
 import '../progress_tracking/progress_dashboard_screen.dart';
 import '../../theme/app_theme.dart';
@@ -28,79 +31,57 @@ class _ChildActivityScreenState extends State<ChildActivityScreen> {
   @override
   void initState() {
     super.initState();
-    _loadMockData();
+    _loadRealData();
   }
 
-  void _loadMockData() {
-    // Mock recommended activities
-    _recommendedActivities = [
-      Activity(
-        id: '1',
-        name: 'Creative Drawing',
-        description: 'Draw your favorite animal using different colors',
-        activityType: 'creative',
-        energyLevel: 'low',
-        duration: 15,
-        minAge: 3,
-        maxAge: 6,
-        requiresParent: false,
-        needsCamera: false,
-        needsCameraEvaluation: false,
-        hasAudioInstructions: true,
-        hasVisualInstructions: true,
-        hasPoints: true,
-        allowsResultUpload: true,
-        expectedOutput: 'image',
-        needsParentFeedback: true,
-        relatedHobbies: ['Drawing', 'Art'],
-        requiredTools: ['Paper', 'Crayons'],
-      ),
-      Activity(
-        id: '2',
-        name: 'Nature Explorer',
-        description: 'Find and collect different types of leaves',
-        activityType: 'educational',
-        energyLevel: 'medium',
-        duration: 20,
-        minAge: 4,
-        maxAge: 6,
-        requiresParent: true,
-        needsCamera: true,
-        needsCameraEvaluation: true,
-        hasAudioInstructions: true,
-        hasVisualInstructions: true,
-        hasPoints: true,
-        allowsResultUpload: true,
-        expectedOutput: 'image',
-        needsParentFeedback: true,
-        relatedHobbies: ['Nature', 'Science'],
-        requiredTools: ['Basket', 'Magnifying glass'],
-      ),
-      Activity(
-        id: '3',
-        name: 'Dance Party',
-        description: 'Dance to your favorite songs with fun moves',
-        activityType: 'physical',
-        energyLevel: 'high',
-        duration: 10,
-        minAge: 2,
-        maxAge: 6,
-        requiresParent: false,
-        needsCamera: false,
-        needsCameraEvaluation: false,
-        hasAudioInstructions: true,
-        hasVisualInstructions: true,
-        hasPoints: true,
-        allowsResultUpload: false,
-        expectedOutput: 'none',
-        needsParentFeedback: true,
-        relatedHobbies: ['Dancing', 'Music'],
-        requiredTools: ['Music player'],
-      ),
-    ];
+  Future<void> _loadRealData() async {
+    try {
+      // Initialize content repository
+      await ContentRepository.instance.init();
+      
+      // Create child profile for recommendations
+      final childProfile = ChildProfile(
+        ageInMonths: _calculateAgeInMonths(widget.child.birthDate),
+        hobbies: widget.child.hobbies,
+        skills: [], // Could be enhanced to track skills
+        tools: [], // Could be enhanced to track available tools
+      );
+      
+      // Get activity recommendations
+      final recommendationService = RecommendationService();
+      final recommendedActivities = recommendationService.recommend(
+        child: childProfile,
+        allActivities: ContentRepository.instance.activities,
+        limit: 6,
+        minScore: 1.0,
+      );
+      
+      setState(() {
+        _recommendedActivities = recommendedActivities;
+        // Mock achievements for now - this could be replaced with real achievement tracking
+        _achievements = _createMockAchievements();
+      });
+    } catch (error) {
+      print('Error loading activities: $error');
+      // Fallback to empty lists
+      setState(() {
+        _recommendedActivities = [];
+        _achievements = [];
+      });
+    }
+  }
 
-    // Mock achievements
-    _achievements = [
+  int _calculateAgeInMonths(DateTime birthDate) {
+    final now = DateTime.now();
+    int months = (now.year - birthDate.year) * 12;
+    months -= birthDate.month;
+    months += now.month;
+    return months;
+  }
+
+  List<Achievement> _createMockAchievements() {
+    // This is temporary mock data - in a real app, this would come from user progress tracking
+    return [
       Achievement(
         id: '1',
         name: 'Creative Master',

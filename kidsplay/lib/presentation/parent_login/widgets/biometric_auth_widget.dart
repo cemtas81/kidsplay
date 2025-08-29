@@ -61,16 +61,14 @@ class _BiometricAuthWidgetState extends State<BiometricAuthWidget>
     });
 
     try {
-      // Simulate biometric authentication
-      await Future.delayed(const Duration(milliseconds: 1500));
-
-      // Mock successful authentication for demo
-      HapticFeedback.lightImpact();
-      widget.onBiometricSuccess();
-    } catch (e) {
+      // For now, biometric auth is not fully implemented
+      // This would require the local_auth package and proper setup
+      await Future.delayed(const Duration(milliseconds: 1000));
+      
+      // Show a message that biometric auth is not available yet
       HapticFeedback.heavyImpact();
       widget.onBiometricError(
-          'Biometric authentication failed. Please try again.');
+          'Biometric authentication is not available. Please use email and password.');
     } finally {
       if (mounted) {
         setState(() {
