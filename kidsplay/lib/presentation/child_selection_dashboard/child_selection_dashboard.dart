@@ -48,12 +48,17 @@ class _ChildSelectionDashboardState extends State<ChildSelectionDashboard> {
       final authService = AuthService();
       final currentUser = authService.getCurrentUser();
       
-      if (currentUser == null || currentUser.isAnonymous) {
-        // User is not properly authenticated, redirect to login
+      if (currentUser == null) {
+        // User is not authenticated at all, redirect to login
         if (mounted) {
           Navigator.pushReplacementNamed(context, '/parent-login');
         }
         return;
+      }
+      
+      // For anonymous users (demo mode), still allow access
+      if (currentUser.isAnonymous) {
+        print('📝 Demo mode: Using anonymous user');
       }
       
       final user = await AuthService.ensureInitializedAndSignedIn();

@@ -53,9 +53,17 @@ class AuthService {
       } catch (e) {
         print('⚠️ Firebase sign in failed, but demo credentials provided: $e');
         print('🎭 Using demo mode for development');
-        // For demo purposes, we'll create a mock user scenario
-        // In a real app, you'd handle this differently
-        rethrow; // Still throw the error but with better context
+        
+        // For demo purposes, use anonymous authentication as fallback
+        try {
+          final anonCredential = await FirebaseAuth.instance.signInAnonymously();
+          print('✅ Demo mode: Anonymous user created for development');
+          return anonCredential.user;
+        } catch (anonError) {
+          print('❌ Anonymous authentication also failed: $anonError');
+          print('🚨 Firebase appears to be completely unavailable');
+          rethrow; // If even anonymous auth fails, Firebase is completely down
+        }
       }
     }
     
@@ -75,6 +83,34 @@ class AuthService {
 
   Future<User?> createUserWithEmailAndPassword(String email, String password) async {
     await _ensureFirebaseReady();
+    
+    // Handle demo credentials for user creation
+    if (_isDemoCredentials(email, password)) {
+      try {
+        print('👤 Attempting to create user: $email');
+        final credential = await FirebaseAuth.instance.createUserWithEmailAndPassword(
+          email: email,
+          password: password,
+        );
+        print('✅ User creation successful for: ${credential.user?.email}');
+        return credential.user;
+      } catch (e) {
+        print('⚠️ User creation failed, but demo credentials provided: $e');
+        print('🎭 Using demo mode - signing in with anonymous user');
+        
+        // For demo purposes, use anonymous authentication as fallback
+        try {
+          final anonCredential = await FirebaseAuth.instance.signInAnonymously();
+          print('✅ Demo mode: Anonymous user created for development');
+          return anonCredential.user;
+        } catch (anonError) {
+          print('❌ Anonymous authentication also failed: $anonError');
+          print('🚨 Firebase appears to be completely unavailable');
+          rethrow; // If even anonymous auth fails, Firebase is completely down
+        }
+      }
+    }
+    
     try {
       print('👤 Attempting to create user: $email');
       final credential = await FirebaseAuth.instance.createUserWithEmailAndPassword(
