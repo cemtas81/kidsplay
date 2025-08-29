@@ -413,7 +413,7 @@ class _ChildActivityScreenState extends State<ChildActivityScreen> {
                     borderRadius: BorderRadius.circular(12),
                   ),
                   child: CustomIconWidget(
-                    iconName: _getActivityIcon(nextActivity.activityType),
+                    iconName: _getActivityIcon(nextActivity.categories.isNotEmpty ? nextActivity.categories.first : 'general'),
                     color: isDark
                         ? AppTheme.onPrimaryDark
                         : AppTheme.onPrimaryLight,
@@ -553,7 +553,7 @@ class _ChildActivityScreenState extends State<ChildActivityScreen> {
               ),
               child: Center(
                 child: CustomIconWidget(
-                  iconName: _getActivityIcon(activity.activityType),
+                  iconName: _getActivityIcon(activity.categories.isNotEmpty ? activity.categories.first : 'general'),
                   color:
                       isDark ? AppTheme.onPrimaryDark : AppTheme.onPrimaryLight,
                   size: 32,
@@ -562,7 +562,7 @@ class _ChildActivityScreenState extends State<ChildActivityScreen> {
             ),
             SizedBox(height: 2.h),
             Text(
-              activity.name,
+              activity.nameKey, // Using nameKey as display name
               style: theme.textTheme.titleSmall?.copyWith(
                 fontWeight: FontWeight.w600,
               ),
@@ -571,7 +571,7 @@ class _ChildActivityScreenState extends State<ChildActivityScreen> {
             ),
             SizedBox(height: 0.5.h),
             Text(
-              activity.description,
+              activity.descriptionKey ?? 'Activity description', // Using descriptionKey with fallback
               style: theme.textTheme.bodySmall?.copyWith(
                 color: isDark
                     ? AppTheme.textSecondaryDark
@@ -592,7 +592,7 @@ class _ChildActivityScreenState extends State<ChildActivityScreen> {
                     borderRadius: BorderRadius.circular(8),
                   ),
                   child: Text(
-                    '${activity.duration} min',
+                    'Activity', // Placeholder since duration is not available in new model
                     style: theme.textTheme.bodySmall?.copyWith(
                       color: isDark
                           ? AppTheme.onPrimaryDark
