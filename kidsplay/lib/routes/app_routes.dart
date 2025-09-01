@@ -6,6 +6,8 @@ import '../presentation/parent_onboarding/parent_onboarding.dart';
 import '../presentation/parent_registration/parent_registration.dart';
 import '../presentation/child_selection_dashboard/child_selection_dashboard.dart';
 import '../presentation/multi_parent_management/multi_parent_screen.dart';
+import '../presentation/password_reset/password_reset_screen.dart';
+import '../presentation/email_verification/email_verification_screen.dart';
 
 class AppRoutes {
   // TODO: Add your routes here
@@ -17,6 +19,8 @@ class AppRoutes {
   static const String parentRegistration = '/parent-registration';
   static const String childSelectionDashboard = '/child-selection-dashboard';
   static const String multiParentManagement = '/multi-parent-management';
+  static const String passwordReset = '/password-reset';
+  static const String emailVerification = '/email-verification';
 
   static Map<String, WidgetBuilder> routes = {
     initial: (context) => const SplashScreen(),
@@ -27,6 +31,8 @@ class AppRoutes {
     parentRegistration: (context) => const ParentRegistration(),
     childSelectionDashboard: (context) => const ChildSelectionDashboard(),
     multiParentManagement: (context) => const MultiParentScreen(),
+    passwordReset: (context) => const PasswordResetScreen(),
+    emailVerification: (context) => const EmailVerificationScreen(),
     // TODO: Add your other routes here
   };
 }

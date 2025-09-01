@@ -106,25 +106,8 @@ class _ParentLoginState extends State<ParentLogin> {
   }
 
   void _handleForgotPassword() {
-    // Show forgot password dialog
-    showDialog(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('Reset Password'),
-        content: const Text(
-          'Password reset functionality will be implemented in the next version. '
-          'For demo purposes, use:\n\n'
-          'Email: parent@kidsplay.com\n'
-          'Password: Parent123',
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: const Text('OK'),
-          ),
-        ],
-      ),
-    );
+    // Navigate to password reset screen
+    Navigator.pushNamed(context, '/password-reset');
   }
 
   Future<void> _handleSocialLogin(String provider) async {

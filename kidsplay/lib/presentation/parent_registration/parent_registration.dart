@@ -46,10 +46,10 @@ class _ParentRegistrationState extends State<ParentRegistration> {
         _showSuccessToast(
             'Account created successfully! Please check your email for verification.');
 
-        // Navigate to email verification or login screen
+        // Navigate to email verification screen
         await Future.delayed(const Duration(seconds: 1));
         if (mounted) {
-          Navigator.pushReplacementNamed(context, '/parent-login');
+          Navigator.pushReplacementNamed(context, '/email-verification');
         }
       }
     } catch (error) {

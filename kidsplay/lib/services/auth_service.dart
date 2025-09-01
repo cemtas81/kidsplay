@@ -149,4 +149,180 @@ class AuthService {
   Stream<User?> get authStateChanges {
     return FirebaseAuth.instance.authStateChanges();
   }
+
+  // Password reset functionality
+  Future<void> sendPasswordResetEmail(String email) async {
+    await _ensureFirebaseReady();
+    
+    try {
+      print('📧 Sending password reset email to: $email');
+      await FirebaseAuth.instance.sendPasswordResetEmail(email: email);
+      print('✅ Password reset email sent successfully');
+    } catch (e) {
+      print('❌ Failed to send password reset email: $e');
+      rethrow;
+    }
+  }
+
+  // Email verification methods
+  Future<void> sendEmailVerification() async {
+    await _ensureFirebaseReady();
+    final user = FirebaseAuth.instance.currentUser;
+    
+    if (user != null && !user.emailVerified) {
+      try {
+        print('📧 Sending email verification to: ${user.email}');
+        await user.sendEmailVerification();
+        print('✅ Email verification sent successfully');
+      } catch (e) {
+        print('❌ Failed to send email verification: $e');
+        rethrow;
+      }
+    } else if (user?.emailVerified == true) {
+      print('ℹ️ Email already verified for: ${user?.email}');
+    } else {
+      throw Exception('No user found to send verification email');
+    }
+  }
+
+  Future<void> reloadUser() async {
+    await _ensureFirebaseReady();
+    final user = FirebaseAuth.instance.currentUser;
+    
+    if (user != null) {
+      await user.reload();
+      print('🔄 User data reloaded');
+    }
+  }
+
+  bool get isEmailVerified {
+    final user = FirebaseAuth.instance.currentUser;
+    return user?.emailVerified ?? false;
+  }
+
+  // Update user profile methods
+  Future<void> updateDisplayName(String displayName) async {
+    await _ensureFirebaseReady();
+    final user = FirebaseAuth.instance.currentUser;
+    
+    if (user != null) {
+      try {
+        await user.updateDisplayName(displayName);
+        await user.reload();
+        print('✅ Display name updated to: $displayName');
+      } catch (e) {
+        print('❌ Failed to update display name: $e');
+        rethrow;
+      }
+    } else {
+      throw Exception('No authenticated user found');
+    }
+  }
+
+  Future<void> updateEmail(String newEmail) async {
+    await _ensureFirebaseReady();
+    final user = FirebaseAuth.instance.currentUser;
+    
+    if (user != null) {
+      try {
+        await user.verifyBeforeUpdateEmail(newEmail);
+        print('✅ Email update verification sent to: $newEmail');
+      } catch (e) {
+        print('❌ Failed to update email: $e');
+        rethrow;
+      }
+    } else {
+      throw Exception('No authenticated user found');
+    }
+  }
+
+  Future<void> updatePassword(String newPassword) async {
+    await _ensureFirebaseReady();
+    final user = FirebaseAuth.instance.currentUser;
+    
+    if (user != null) {
+      try {
+        await user.updatePassword(newPassword);
+        print('✅ Password updated successfully');
+      } catch (e) {
+        print('❌ Failed to update password: $e');
+        rethrow;
+      }
+    } else {
+      throw Exception('No authenticated user found');
+    }
+  }
+
+  // Re-authentication for sensitive operations
+  Future<void> reauthenticateWithPassword(String password) async {
+    await _ensureFirebaseReady();
+    final user = FirebaseAuth.instance.currentUser;
+    
+    if (user != null && user.email != null) {
+      try {
+        final credential = EmailAuthProvider.credential(
+          email: user.email!,
+          password: password,
+        );
+        await user.reauthenticateWithCredential(credential);
+        print('✅ User re-authenticated successfully');
+      } catch (e) {
+        print('❌ Re-authentication failed: $e');
+        rethrow;
+      }
+    } else {
+      throw Exception('No authenticated user found or email missing');
+    }
+  }
+
+  // Delete user account
+  Future<void> deleteAccount() async {
+    await _ensureFirebaseReady();
+    final user = FirebaseAuth.instance.currentUser;
+    
+    if (user != null) {
+      try {
+        await user.delete();
+        print('✅ User account deleted successfully');
+      } catch (e) {
+        print('❌ Failed to delete account: $e');
+        rethrow;
+      }
+    } else {
+      throw Exception('No authenticated user found');
+    }
+  }
+
+  // Session management
+  bool get hasValidSession {
+    final user = FirebaseAuth.instance.currentUser;
+    return user != null && !user.isAnonymous;
+  }
+
+  Future<bool> isSessionExpired() async {
+    try {
+      final user = FirebaseAuth.instance.currentUser;
+      if (user == null) return true;
+      
+      // Get fresh token to check if session is still valid
+      await user.getIdToken(true);
+      return false;
+    } catch (e) {
+      print('⚠️ Session check failed: $e');
+      return true;
+    }
+  }
+
+  Future<void> refreshSession() async {
+    try {
+      final user = FirebaseAuth.instance.currentUser;
+      if (user != null) {
+        await user.getIdToken(true);
+        print('🔄 Session refreshed successfully');
+      }
+    } catch (e) {
+      print('❌ Session refresh failed: $e');
+      rethrow;
+    }
+  }
 }
