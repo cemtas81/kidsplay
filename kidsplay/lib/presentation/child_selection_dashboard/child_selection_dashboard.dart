@@ -7,6 +7,7 @@ import '../../core/activity_recommendation_engine.dart';
 import '../../models/child.dart';
 import '../../repositories/child_repository.dart';
 import '../../services/auth_service.dart';
+import '../../services/auth_guard.dart';
 import './widgets/child_profile_card.dart';
 import './widgets/custom_tab_navigation.dart';
 import './widgets/dashboard_header.dart';
@@ -84,6 +85,13 @@ class _ChildSelectionDashboardState extends State<ChildSelectionDashboard> {
 
   @override
   Widget build(BuildContext context) {
+    return AuthGuardWidget(
+      requireEmailVerification: true,
+      child: _buildDashboard(context),
+    );
+  }
+
+  Widget _buildDashboard(BuildContext context) {
     final theme = Theme.of(context);
     final isDark = theme.brightness == Brightness.dark;
 
@@ -267,6 +275,13 @@ class _ChildSelectionDashboardState extends State<ChildSelectionDashboard> {
             title: 'Progress Dashboard',
             subtitle: 'View detailed progress reports',
             onTap: () => _navigateToProgressDashboard(),
+          ),
+          SizedBox(height: 2.h),
+          _buildSettingsCard(
+            icon: 'logout',
+            title: 'Sign Out',
+            subtitle: 'Sign out of your account',
+            onTap: () => _showSignOutDialog(),
           ),
         ],
       ),
@@ -629,6 +644,55 @@ class _ChildSelectionDashboardState extends State<ChildSelectionDashboard> {
         builder: (context) => ProgressDashboardScreen(child: firstChild),
       ),
     );
+  }
+
+  void _showSignOutDialog() {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Sign Out'),
+        content: const Text('Are you sure you want to sign out of your account?'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('Cancel'),
+          ),
+          ElevatedButton(
+            onPressed: () async {
+              Navigator.pop(context);
+              await _handleSignOut();
+            },
+            style: ElevatedButton.styleFrom(
+              backgroundColor: Theme.of(context).colorScheme.error,
+              foregroundColor: Colors.white,
+            ),
+            child: const Text('Sign Out'),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Future<void> _handleSignOut() async {
+    try {
+      await AuthService().signOut();
+      if (mounted) {
+        Navigator.pushNamedAndRemoveUntil(
+          context,
+          '/parent-login',
+          (route) => false,
+        );
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Sign out failed: ${e.toString()}'),
+            backgroundColor: Theme.of(context).colorScheme.error,
+          ),
+        );
+      }
+    }
   }
 
   void _showConfirmationDialog(

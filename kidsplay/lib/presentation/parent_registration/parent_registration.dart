@@ -46,10 +46,10 @@ class _ParentRegistrationState extends State<ParentRegistration> {
         _showSuccessToast(
             'Account created successfully! Please check your email for verification.');
 
-        // Navigate to email verification or login screen
+        // Navigate to email verification screen
         await Future.delayed(const Duration(seconds: 1));
         if (mounted) {
-          Navigator.pushReplacementNamed(context, '/parent-login');
+          Navigator.pushReplacementNamed(context, '/email-verification');
         }
       }
     } catch (error) {
@@ -85,21 +85,45 @@ class _ParentRegistrationState extends State<ParentRegistration> {
     setState(() => _isSocialLoading = true);
 
     try {
-      // Simulate Google Sign-In process
-      await Future.delayed(const Duration(seconds: 2));
+      // Use Firebase Google Authentication
+      final authService = AuthService();
+      final user = await authService.signInWithGoogle();
+      
+      if (user != null) {
+        _showSuccessToast('Google sign-up successful!');
 
-      _showSuccessToast('Google sign-up successful!');
-
-      await Future.delayed(const Duration(seconds: 1));
-      if (mounted) {
-        Navigator.pushReplacementNamed(context, '/child-selection-dashboard');
+        await Future.delayed(const Duration(seconds: 1));
+        if (mounted) {
+          // For Google sign-up, user is already created so go directly to child profile creation
+          Navigator.pushReplacementNamed(context, '/child-profile-creation');
+        }
+      } else {
+        // User canceled the sign-in, don't show error
       }
-    } catch (e) {
-      _showErrorToast('Google sign-up failed. Please try again.');
+    } catch (error) {
+      _showErrorToast(_getGoogleSignUpErrorMessage(error.toString()));
     } finally {
       if (mounted) {
         setState(() => _isSocialLoading = false);
       }
+    }
+  }
+
+  String _getGoogleSignUpErrorMessage(String error) {
+    if (error.contains('network-request-failed')) {
+      return 'Network error. Please check your internet connection and try again.';
+    } else if (error.contains('account-exists-with-different-credential')) {
+      return 'An account already exists with this email using a different sign-in method.';
+    } else if (error.contains('invalid-credential')) {
+      return 'The credential is invalid or has expired.';
+    } else if (error.contains('operation-not-allowed')) {
+      return 'Google sign-in is not enabled. Please contact support.';
+    } else if (error.contains('user-disabled')) {
+      return 'This account has been disabled.';
+    } else if (error.contains('Firebase not initialized')) {
+      return 'App initialization error. Please restart the app and try again.';
+    } else {
+      return 'Google sign-up failed. Please try again.';
     }
   }
 

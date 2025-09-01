@@ -1,8 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:sizer/sizer.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 
 import '../../core/app_export.dart';
+import '../../services/auth_service.dart';
+import '../../repositories/child_repository.dart';
 
 class SplashScreen extends StatefulWidget {
   const SplashScreen({super.key});
@@ -18,6 +21,8 @@ class _SplashScreenState extends State<SplashScreen>
   late Animation<double> _logoScaleAnimation;
   late Animation<double> _logoOpacityAnimation;
   late Animation<double> _loadingOpacityAnimation;
+  
+  String _targetRoute = '/parent-onboarding'; // Default route
 
   @override
   void initState() {
@@ -90,28 +95,58 @@ class _SplashScreenState extends State<SplashScreen>
 
   Future<void> _initializeApp() async {
     try {
-      // Simulate checking parent authentication status
-      await Future.delayed(const Duration(milliseconds: 500));
+      // Check Firebase authentication state
+      final user = FirebaseAuth.instance.currentUser;
+      
+      if (user != null) {
+        // User is signed in, check if email is verified and if they have children
+        if (user.emailVerified || user.isAnonymous) {
+          // Check if user has children profiles
+          final childRepository = ChildRepository();
+          final children = await childRepository.watchChildrenOf(user.uid).first;
+          
+          // Store navigation decision for later
+          setState(() {
+            if (children.isNotEmpty) {
+              _targetRoute = '/child-selection-dashboard';
+            } else {
+              _targetRoute = '/child-profile-creation';
+            }
+          });
+          
+          debugPrint('✅ User authenticated, navigating to: $_targetRoute');
+        } else {
+          // User exists but email not verified
+          setState(() {
+            _targetRoute = '/email-verification';
+          });
+          debugPrint('⚠️ User email not verified, redirecting to email verification');
+        }
+      } else {
+        // No authenticated user
+        setState(() {
+          _targetRoute = '/parent-onboarding';
+        });
+        debugPrint('ℹ️ No authenticated user, showing onboarding');
+      }
 
-      // Simulate loading child profiles
-      await Future.delayed(const Duration(milliseconds: 300));
-
-      // Simulate fetching activity data
-      await Future.delayed(const Duration(milliseconds: 400));
-
-      // Simulate preparing offline content cache
-      await Future.delayed(const Duration(milliseconds: 300));
+      // Simulate loading time for better UX
+      await Future.delayed(const Duration(milliseconds: 800));
     } catch (e) {
       // Handle initialization errors gracefully
-      debugPrint('Initialization error: $e');
+      debugPrint('⚠️ Initialization error: $e');
+      setState(() {
+        _targetRoute = '/parent-onboarding';
+      });
     }
   }
 
   void _navigateToNextScreen() {
-    // Navigation logic based on user state
-    // For demo purposes, we'll navigate to parent onboarding
-    // In real implementation, this would check authentication status
-    Navigator.pushReplacementNamed(context, '/parent-onboarding');
+    // Navigate based on authentication state determined during initialization
+    if (mounted) {
+      Navigator.pushReplacementNamed(context, _targetRoute);
+      debugPrint('🚀 Navigating to: $_targetRoute');
+    }
   }
 
   @override
