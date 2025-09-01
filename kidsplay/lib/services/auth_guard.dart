@@ -8,46 +8,30 @@ class AuthGuard {
 
   /// Check if user is authenticated and redirect if not
   static Future<bool> requireAuth(BuildContext context) async {
-    final user = FirebaseAuth.instance.currentUser;
-    
-    if (user == null || user.isAnonymous) {
-      // User is not authenticated, redirect to login
-      Navigator.pushReplacementNamed(context, '/parent-login');
-      return false;
+    // TODO: TEMPORARY MOCK AUTH HANDLING - REMOVE WHEN REAL AUTH SERVICE IS RESTORED
+    // Check if user is authenticated using AuthService (handles both mock and real auth)
+    if (_authService.isAuthenticated()) {
+      return true;
     }
     
-    // Check if session is still valid
-    try {
-      final isExpired = await _authService.isSessionExpired();
-      if (isExpired) {
-        // Session expired, redirect to login
-        await _authService.signOut();
-        if (context.mounted) {
-          Navigator.pushReplacementNamed(context, '/parent-login');
-        }
-        return false;
-      }
-    } catch (e) {
-      // If session check fails, redirect to login for safety
-      await _authService.signOut();
-      if (context.mounted) {
-        Navigator.pushReplacementNamed(context, '/parent-login');
-      }
-      return false;
-    }
-    
-    return true;
+    // User is not authenticated, redirect to login
+    Navigator.pushReplacementNamed(context, '/parent-login');
+    return false;
   }
 
   /// Check if user is authenticated without redirecting
   static bool isAuthenticated() {
-    final user = FirebaseAuth.instance.currentUser;
-    return user != null && !user.isAnonymous;
+    // TODO: TEMPORARY MOCK AUTH HANDLING - REMOVE WHEN REAL AUTH SERVICE IS RESTORED
+    // Use AuthService which handles both mock and real authentication
+    final authService = AuthService();
+    return authService.isAuthenticated();
   }
 
   /// Check if user email is verified
   static bool isEmailVerified() {
-    final user = FirebaseAuth.instance.currentUser;
+    // TODO: TEMPORARY MOCK AUTH HANDLING - REMOVE WHEN REAL AUTH SERVICE IS RESTORED
+    final authService = AuthService();
+    final user = authService.getCurrentUser();
     return user?.emailVerified ?? false;
   }
 
@@ -95,17 +79,27 @@ class AuthGuard {
 
   /// Auto-logout on session expiry
   static Future<void> startSessionMonitoring(BuildContext context) async {
+    // TODO: TEMPORARY MOCK AUTH HANDLING - REMOVE WHEN REAL AUTH SERVICE IS RESTORED
+    // For mock auth, we'll use a simplified session monitoring approach
+    final authService = AuthService();
+    
     // Monitor auth state changes
-    FirebaseAuth.instance.authStateChanges().listen((user) {
-      if (user == null && context.mounted) {
-        // User signed out, redirect to login
-        Navigator.pushNamedAndRemoveUntil(
-          context, 
-          '/parent-login', 
-          (route) => false,
-        );
-      }
-    });
+    // Note: In mock mode, this will be a simplified implementation
+    try {
+      FirebaseAuth.instance.authStateChanges().listen((user) {
+        if (user == null && context.mounted && !authService.isAuthenticated()) {
+          // User signed out, redirect to login
+          Navigator.pushNamedAndRemoveUntil(
+            context, 
+            '/parent-login', 
+            (route) => false,
+          );
+        }
+      });
+    } catch (e) {
+      // If Firebase isn't available, use periodic checks instead
+      print('⚠️ Firebase auth state monitoring unavailable, using periodic checks');
+    }
 
     // Periodic session validation (every 30 minutes)
     _startPeriodicSessionCheck(context);
@@ -118,9 +112,11 @@ class AuthGuard {
       if (!context.mounted) return;
       
       try {
-        final isExpired = await _authService.isSessionExpired();
-        if (isExpired && context.mounted) {
-          await _authService.signOut();
+        // TODO: TEMPORARY MOCK AUTH HANDLING - REMOVE WHEN REAL AUTH SERVICE IS RESTORED
+        // In mock mode, we'll skip the complex session expiry logic
+        final authService = AuthService();
+        if (!authService.isAuthenticated() && context.mounted) {
+          await authService.signOut();
           Navigator.pushNamedAndRemoveUntil(
             context, 
             '/parent-login', 

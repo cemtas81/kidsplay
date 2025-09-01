@@ -88,9 +88,11 @@ class _ParentLoginState extends State<ParentLogin> {
     } else if (error.contains('operation-not-allowed')) {
       return 'Email/password sign-in is not enabled. Please contact support.';
     } else if (error.contains('configuration-not-found')) {
-      return 'Authentication service is currently unavailable. For demo purposes, use:\n\nEmail: parent@kidsplay.com\nPassword: Parent123';
+      return 'Authentication service is currently unavailable. For demo purposes, use:\n\nEmail: demo@demo.com\nPassword: demo1234';
+    } else if (error.contains('invalid-credential')) {
+      return 'Authentication service is currently unavailable. For demo purposes, use:\n\nEmail: demo@demo.com\nPassword: demo1234';
     } else {
-      return 'Login failed. Please check your credentials and try again.';
+      return 'Login failed. Please check your credentials and try again.\n\nIf authentication service is unavailable, use demo credentials:\nEmail: demo@demo.com\nPassword: demo1234';
     }
   }
 
