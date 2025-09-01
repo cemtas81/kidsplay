@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:sizer/sizer.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 
 import '../../core/app_export.dart';
 import '../../services/auth_service.dart';
@@ -84,7 +85,7 @@ class _PasswordResetScreenState extends State<PasswordResetScreen> {
     return Scaffold(
       appBar: CustomAppBar(
         title: 'Reset Password',
-        showBackButton: true,
+        automaticallyImplyLeading: true,
         onBackPressed: () => Navigator.pop(context),
       ),
       body: SafeArea(
