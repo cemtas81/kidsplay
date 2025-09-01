@@ -3,10 +3,187 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:google_sign_in/google_sign_in.dart';
 import '../firebase_options.dart';
 
+// TODO: TEMPORARY MOCK USER CLASS - REMOVE WHEN REAL AUTH SERVICE IS RESTORED
+// This mock user implementation is used when Firebase auth is unavailable
+class MockUser implements User {
+  @override
+  final String uid;
+  @override
+  final String? email;
+  @override
+  final String? displayName;
+  @override
+  final bool emailVerified;
+  @override
+  final bool isAnonymous;
+  
+  MockUser({
+    required this.uid,
+    required this.email,
+    this.displayName,
+    this.emailVerified = true,
+    this.isAnonymous = false,
+  });
+  
+  // Implement all other required User methods with stubs
+  @override
+  ActionCodeInfo? get actionCodeInfo => null;
+  
+  @override
+  DateTime? get creationTime => DateTime.now();
+  
+  @override
+  DateTime? get lastSignInTime => DateTime.now();
+  
+  @override
+  String? get phoneNumber => null;
+  
+  @override
+  String? get photoURL => null;
+  
+  @override
+  List<UserInfo> get providerData => [];
+  
+  @override
+  String? get refreshToken => null;
+  
+  @override
+  String? get tenantId => null;
+  
+  @override
+  UserMetadata get metadata => _MockUserMetadata();
+  
+  @override
+  MultiFactor get multiFactor => throw UnimplementedError('Mock user does not support multifactor');
+  
+  @override
+  Future<void> delete() async {
+    throw UnimplementedError('Mock user deletion not implemented');
+  }
+  
+  @override
+  Future<String> getIdToken([bool forceRefresh = false]) async {
+    return 'mock-id-token';
+  }
+  
+  @override
+  Future<IdTokenResult> getIdTokenResult([bool forceRefresh = false]) async {
+    throw UnimplementedError('Mock user token result not implemented');
+  }
+  
+  @override
+  Future<void> linkWithCredential(AuthCredential credential) async {
+    throw UnimplementedError('Mock user linking not implemented');
+  }
+  
+  @override
+  Future<ConfirmationResult> linkWithPhoneNumber(String phoneNumber, [RecaptchaVerifier? verifier]) async {
+    throw UnimplementedError('Mock user phone linking not implemented');
+  }
+  
+  @override
+  Future<UserCredential> linkWithPopup(AuthProvider provider) async {
+    throw UnimplementedError('Mock user popup linking not implemented');
+  }
+  
+  @override
+  Future<void> linkWithRedirect(AuthProvider provider) async {
+    throw UnimplementedError('Mock user redirect linking not implemented');
+  }
+  
+  @override
+  Future<UserCredential> reauthenticateWithCredential(AuthCredential credential) async {
+    throw UnimplementedError('Mock user reauthentication not implemented');
+  }
+  
+  @override
+  Future<UserCredential> reauthenticateWithPopup(AuthProvider provider) async {
+    throw UnimplementedError('Mock user popup reauthentication not implemented');
+  }
+  
+  @override
+  Future<void> reauthenticateWithRedirect(AuthProvider provider) async {
+    throw UnimplementedError('Mock user redirect reauthentication not implemented');
+  }
+  
+  @override
+  Future<void> reload() async {
+    // Mock reload - do nothing
+  }
+  
+  @override
+  Future<void> sendEmailVerification([ActionCodeSettings? actionCodeSettings]) async {
+    print('📧 Mock: Email verification sent to $email');
+  }
+  
+  @override
+  Future<User> unlink(String providerId) async {
+    throw UnimplementedError('Mock user unlink not implemented');
+  }
+  
+  @override
+  Future<void> updateDisplayName(String? displayName) async {
+    print('👤 Mock: Display name updated to $displayName');
+  }
+  
+  @override
+  Future<void> updateEmail(String newEmail) async {
+    throw UnimplementedError('Mock user email update not implemented');
+  }
+  
+  @override
+  Future<void> updatePassword(String newPassword) async {
+    throw UnimplementedError('Mock user password update not implemented');
+  }
+  
+  @override
+  Future<void> updatePhoneNumber(PhoneAuthCredential phoneCredential) async {
+    throw UnimplementedError('Mock user phone update not implemented');
+  }
+  
+  @override
+  Future<void> updatePhotoURL(String? photoURL) async {
+    print('📷 Mock: Photo URL updated to $photoURL');
+  }
+  
+  @override
+  Future<void> updateProfile({String? displayName, String? photoURL}) async {
+    print('👤 Mock: Profile updated - name: $displayName, photo: $photoURL');
+  }
+  
+  @override
+  Future<void> verifyBeforeUpdateEmail(String newEmail, [ActionCodeSettings? actionCodeSettings]) async {
+    throw UnimplementedError('Mock user email verification not implemented');
+  }
+}
+
+class _MockUserMetadata implements UserMetadata {
+  @override
+  DateTime? get creationTime => DateTime.now();
+  
+  @override
+  DateTime? get lastRefreshTime => DateTime.now();
+  
+  @override
+  DateTime? get lastSignInTime => DateTime.now();
+}
+
 class AuthService {
   // Firebase is already initialized in main.dart, no need to initialize again
   
+  // TODO: TEMPORARY MOCK AUTHENTICATION - REMOVE WHEN REAL AUTH SERVICE IS RESTORED
+  // This is a temporary workaround while the authentication service is unavailable
+  static const bool _useMockAuth = true; // Set to false when real auth is restored
+  static const String _mockUserId = 'mock-user-12345';
+  static User? _mockUser; // Store mock user for session persistence
+  
   static Future<void> _ensureFirebaseReady() async {
+    // Skip Firebase initialization check in mock mode
+    if (_useMockAuth) {
+      print('🎭 Mock authentication mode enabled - bypassing Firebase');
+      return;
+    }
+    
     // Just verify Firebase is ready, don't initialize again
     if (Firebase.apps.isEmpty) {
       throw Exception('Firebase not initialized. Please ensure Firebase.initializeApp() is called in main.dart');
@@ -15,6 +192,10 @@ class AuthService {
   }
 
   static Future<User> ensureInitializedAndSignedIn() async {
+    if (_useMockAuth && _mockUser != null) {
+      return _mockUser!;
+    }
+    
     await _ensureFirebaseReady();
     final auth = FirebaseAuth.instance;
     if (auth.currentUser == null) {
@@ -24,13 +205,18 @@ class AuthService {
   }
 
   static Future<String> getUid() async {
+    if (_useMockAuth && _mockUser != null) {
+      return _mockUser!.uid;
+    }
+    
     final user = await ensureInitializedAndSignedIn();
     return user.uid;
   }
 
-  // Demo credentials for testing
-  static const String _demoEmail = 'parent@kidsplay.com';
-  static const String _demoPassword = 'Parent123';
+  // TODO: TEMPORARY MOCK CREDENTIALS - REMOVE WHEN REAL AUTH SERVICE IS RESTORED
+  // Demo credentials for testing during auth service downtime
+  static const String _demoEmail = 'demo@demo.com';
+  static const String _demoPassword = 'demo1234';
   
   // Check if using demo credentials
   bool _isDemoCredentials(String email, String password) {
@@ -39,6 +225,35 @@ class AuthService {
 
   // Email/Password Authentication methods
   Future<User?> signInWithEmailAndPassword(String email, String password) async {
+    // TODO: TEMPORARY MOCK AUTHENTICATION - REMOVE WHEN REAL AUTH SERVICE IS RESTORED
+    if (_useMockAuth) {
+      print('🎭 Mock authentication mode - checking credentials');
+      
+      // Only allow the specific demo credentials
+      if (_isDemoCredentials(email, password)) {
+        print('✅ Mock login successful for: $email');
+        
+        // Create and store mock user
+        _mockUser = MockUser(
+          uid: _mockUserId,
+          email: email,
+          displayName: 'Demo User',
+          emailVerified: true,
+          isAnonymous: false,
+        );
+        
+        return _mockUser;
+      } else {
+        print('❌ Mock login failed - invalid credentials provided');
+        print('ℹ️ Only demo credentials are accepted: $_demoEmail / $_demoPassword');
+        throw FirebaseAuthException(
+          code: 'invalid-credential',
+          message: 'Authentication service is currently unavailable. Please use demo credentials: $_demoEmail / $_demoPassword',
+        );
+      }
+    }
+    
+    // Original Firebase authentication logic (when mock mode is disabled)
     await _ensureFirebaseReady();
     
     // Handle demo credentials with fallback if Firebase fails
@@ -83,6 +298,35 @@ class AuthService {
   }
 
   Future<User?> createUserWithEmailAndPassword(String email, String password) async {
+    // TODO: TEMPORARY MOCK AUTHENTICATION - REMOVE WHEN REAL AUTH SERVICE IS RESTORED
+    if (_useMockAuth) {
+      print('🎭 Mock registration mode - checking credentials');
+      
+      // Only allow the specific demo credentials for registration too
+      if (_isDemoCredentials(email, password)) {
+        print('✅ Mock registration successful for: $email');
+        
+        // Create and store mock user (same as login for demo purposes)
+        _mockUser = MockUser(
+          uid: _mockUserId,
+          email: email,
+          displayName: 'Demo User',
+          emailVerified: true,
+          isAnonymous: false,
+        );
+        
+        return _mockUser;
+      } else {
+        print('❌ Mock registration failed - invalid credentials provided');
+        print('ℹ️ Only demo credentials are accepted: $_demoEmail / $_demoPassword');
+        throw FirebaseAuthException(
+          code: 'invalid-credential',
+          message: 'Registration service is currently unavailable. Please use demo credentials: $_demoEmail / $_demoPassword',
+        );
+      }
+    }
+    
+    // Original Firebase authentication logic (when mock mode is disabled)
     await _ensureFirebaseReady();
     
     // Handle demo credentials for user creation
@@ -127,15 +371,32 @@ class AuthService {
   }
 
   Future<void> signOut() async {
+    // TODO: TEMPORARY MOCK AUTH HANDLING - REMOVE WHEN REAL AUTH SERVICE IS RESTORED
+    if (_useMockAuth) {
+      print('🎭 Mock sign out');
+      _mockUser = null;
+      return;
+    }
+    
     await FirebaseAuth.instance.signOut();
   }
 
   User? getCurrentUser() {
+    // TODO: TEMPORARY MOCK AUTH HANDLING - REMOVE WHEN REAL AUTH SERVICE IS RESTORED
+    if (_useMockAuth) {
+      return _mockUser;
+    }
+    
     return FirebaseAuth.instance.currentUser;
   }
 
   // Check if user is authenticated (not anonymous)
   bool isAuthenticated() {
+    // TODO: TEMPORARY MOCK AUTH HANDLING - REMOVE WHEN REAL AUTH SERVICE IS RESTORED
+    if (_useMockAuth) {
+      return _mockUser != null && !_mockUser!.isAnonymous;
+    }
+    
     final user = FirebaseAuth.instance.currentUser;
     return user != null && !user.isAnonymous;
   }
