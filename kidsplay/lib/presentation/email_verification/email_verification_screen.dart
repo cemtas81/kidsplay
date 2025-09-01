@@ -150,7 +150,7 @@ class _EmailVerificationScreenState extends State<EmailVerificationScreen> {
     return Scaffold(
       appBar: CustomAppBar(
         title: 'Verify Email',
-        showBackButton: false,
+        automaticallyImplyLeading: false,
         actions: [
           TextButton(
             onPressed: _signOut,
