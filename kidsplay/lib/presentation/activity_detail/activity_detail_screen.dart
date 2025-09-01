@@ -7,6 +7,7 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import '../../models/activity.dart';
 import '../../models/child.dart';
+import '../../services/auth_guard.dart';
 import '../../widgets/custom_app_bar.dart';
 import '../../widgets/custom_bottom_bar.dart';
 import '../../theme/app_theme.dart';
@@ -107,6 +108,12 @@ class _ActivityDetailScreenState extends State<ActivityDetailScreen>
 
   @override
   Widget build(BuildContext context) {
+    return AuthGuardWidget(
+      child: _buildActivityDetail(context),
+    );
+  }
+
+  Widget _buildActivityDetail(BuildContext context) {
     final theme = Theme.of(context);
     final isDark = theme.brightness == Brightness.dark;
 

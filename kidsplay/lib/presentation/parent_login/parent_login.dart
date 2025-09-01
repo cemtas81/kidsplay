@@ -117,18 +117,39 @@ class _ParentLoginState extends State<ParentLogin> {
     });
 
     try {
-      // Simulate social login delay
-      await Future.delayed(const Duration(milliseconds: 2000));
-
-      HapticFeedback.lightImpact();
-
-      if (mounted) {
-        Navigator.pushReplacementNamed(context, '/child-selection-dashboard');
+      User? user;
+      
+      if (provider == 'google') {
+        // Use Firebase Google Authentication
+        final authService = AuthService();
+        user = await authService.signInWithGoogle();
+      } else {
+        // Handle other providers in the future (Facebook, Apple, etc.)
+        throw Exception('Provider $provider not yet implemented');
       }
-    } catch (e) {
+      
+      if (user != null && mounted) {
+        HapticFeedback.lightImpact();
+        
+        // Check if user has children to determine navigation
+        final childRepository = ChildRepository();
+        final children = await childRepository.watchChildrenOf(user.uid).first;
+        
+        if (children.isNotEmpty) {
+          Navigator.pushReplacementNamed(context, '/child-selection-dashboard');
+        } else {
+          Navigator.pushReplacementNamed(context, '/child-profile-creation');
+        }
+      } else if (user == null) {
+        // User canceled the sign-in
+        setState(() {
+          _errorMessage = null; // Don't show error for user cancellation
+        });
+      }
+    } catch (error) {
       HapticFeedback.heavyImpact();
       setState(() {
-        _errorMessage = 'Social login failed. Please try again.';
+        _errorMessage = _getSocialLoginErrorMessage(provider, error.toString());
       });
     } finally {
       if (mounted) {
@@ -136,6 +157,24 @@ class _ParentLoginState extends State<ParentLogin> {
           _isLoading = false;
         });
       }
+    }
+  }
+
+  String _getSocialLoginErrorMessage(String provider, String error) {
+    if (error.contains('network-request-failed')) {
+      return 'Network error. Please check your internet connection and try again.';
+    } else if (error.contains('account-exists-with-different-credential')) {
+      return 'An account already exists with this email using a different sign-in method.';
+    } else if (error.contains('invalid-credential')) {
+      return 'The credential is invalid or has expired.';
+    } else if (error.contains('operation-not-allowed')) {
+      return 'Google sign-in is not enabled. Please contact support.';
+    } else if (error.contains('user-disabled')) {
+      return 'This account has been disabled.';
+    } else if (error.contains('Firebase not initialized')) {
+      return 'App initialization error. Please restart the app and try again.';
+    } else {
+      return '$provider sign-in failed. Please try again.';
     }
   }
 

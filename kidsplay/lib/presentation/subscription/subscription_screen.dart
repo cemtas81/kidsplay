@@ -5,6 +5,7 @@ import '../../theme/app_theme.dart';
 import '../../models/child.dart';
 import '../../models/subscription_plan.dart';
 import '../../services/auth_service.dart';
+import '../../services/auth_guard.dart';
 import '../../repositories/child_repository.dart';
 import '../../repositories/subscription_repository.dart';
 
@@ -35,18 +36,7 @@ class _SubscriptionScreenState extends State<SubscriptionScreen> {
 
   Future<void> _bootstrap() async {
     try {
-      // Check if user is authenticated first
-      final authService = AuthService();
-      final currentUser = authService.getCurrentUser();
-      
-      if (currentUser == null || currentUser.isAnonymous) {
-        // User is not properly authenticated, redirect to login
-        if (mounted) {
-          Navigator.pushReplacementNamed(context, '/parent-login');
-        }
-        return;
-      }
-      
+      // AuthGuardWidget ensures user is authenticated, so we can directly get user
       final user = await AuthService.ensureInitializedAndSignedIn();
       setState(() {
         _uid = user.uid;
@@ -60,15 +50,20 @@ class _SubscriptionScreenState extends State<SubscriptionScreen> {
         setState(() => _currentPlan = plan ?? SubscriptionPlan.byId('free'));
       });
     } catch (error) {
-      // If authentication fails, redirect to login
-      if (mounted) {
-        Navigator.pushReplacementNamed(context, '/parent-login');
-      }
+      // Handle any unexpected errors
+      debugPrint('Bootstrap error in subscription screen: $error');
     }
   }
 
   @override
   Widget build(BuildContext context) {
+    return AuthGuardWidget(
+      requireEmailVerification: true,
+      child: _buildSubscriptionScreen(context),
+    );
+  }
+
+  Widget _buildSubscriptionScreen(BuildContext context) {
     final theme = Theme.of(context);
     final isDark = theme.brightness == Brightness.dark;
 

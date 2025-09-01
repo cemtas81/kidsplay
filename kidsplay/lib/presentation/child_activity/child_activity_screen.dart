@@ -6,6 +6,7 @@ import '../../services/recommendation_service.dart';
 import '../../models/child_profile.dart';
 import '../../models/child.dart';
 import '../../models/activity.dart';
+import '../../services/auth_guard.dart';
 import '../../widgets/custom_app_bar.dart';
 import '../progress_tracking/progress_dashboard_screen.dart';
 import '../../theme/app_theme.dart';
@@ -134,6 +135,12 @@ class _ChildActivityScreenState extends State<ChildActivityScreen> {
 
   @override
   Widget build(BuildContext context) {
+    return AuthGuardWidget(
+      child: _buildChildActivity(context),
+    );
+  }
+
+  Widget _buildChildActivity(BuildContext context) {
     final theme = Theme.of(context);
     final isDark = theme.brightness == Brightness.dark;
 

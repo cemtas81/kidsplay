@@ -7,6 +7,7 @@ import '../../core/app_export.dart';
 import '../../models/child.dart';
 import '../../repositories/child_repository.dart';
 import '../../services/auth_service.dart';
+import '../../services/auth_guard.dart';
 import './widgets/hobby_selection_grid.dart';
 import './widgets/play_duration_picker.dart';
 import './widgets/profile_photo_section.dart';
@@ -626,6 +627,13 @@ class _ChildProfileCreationState extends State<ChildProfileCreation>
 
   @override
   Widget build(BuildContext context) {
+    return AuthGuardWidget(
+      requireEmailVerification: true,
+      child: _buildChildProfileCreation(context),
+    );
+  }
+
+  Widget _buildChildProfileCreation(BuildContext context) {
     return Scaffold(
       backgroundColor: AppTheme.lightTheme.scaffoldBackgroundColor,
       appBar: AppBar(

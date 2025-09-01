@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:sizer/sizer.dart';
 import '../../widgets/custom_app_bar.dart';
 import '../../services/auth_service.dart';
+import '../../services/auth_guard.dart';
 import '../../repositories/parent_repository.dart';
 import '../../repositories/child_repository.dart';
 import '../../repositories/invitation_repository.dart';
@@ -38,24 +39,7 @@ class _MultiParentScreenState extends State<MultiParentScreen>
 
   Future<void> _bootstrap() async {
     try {
-      // Check if user is authenticated first
-      final authService = AuthService();
-      final currentUser = authService.getCurrentUser();
-      
-      if (currentUser == null || currentUser.isAnonymous) {
-        // User is not properly authenticated, redirect to login
-        if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: const Text('Please login first to access multi-parent management'),
-              backgroundColor: Theme.of(context).colorScheme.error,
-            ),
-          );
-          Navigator.pushReplacementNamed(context, '/parent-login');
-        }
-        return;
-      }
-      
+      // AuthGuardWidget ensures user is authenticated, so we can directly get user
       final user = await AuthService.ensureInitializedAndSignedIn();
       setState(() {
         _uid = user.uid;
@@ -88,6 +72,13 @@ class _MultiParentScreenState extends State<MultiParentScreen>
 
   @override
   Widget build(BuildContext context) {
+    return AuthGuardWidget(
+      requireEmailVerification: true,
+      child: _buildMultiParentManagement(context),
+    );
+  }
+
+  Widget _buildMultiParentManagement(BuildContext context) {
     final theme = Theme.of(context);
     if (_uid == null) {
       return const Scaffold(

@@ -5,6 +5,7 @@ import 'package:fl_chart/fl_chart.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import '../../core/activity_recommendation_engine.dart';
 import '../../models/child.dart';
+import '../../services/auth_guard.dart';
 import '../../widgets/custom_app_bar.dart';
 import '../../theme/app_theme.dart';
 import '../../widgets/custom_icon_widget.dart';
@@ -117,6 +118,12 @@ class _ProgressDashboardScreenState extends State<ProgressDashboardScreen>
 
   @override
   Widget build(BuildContext context) {
+    return AuthGuardWidget(
+      child: _buildProgressDashboard(context),
+    );
+  }
+
+  Widget _buildProgressDashboard(BuildContext context) {
     final theme = Theme.of(context);
     final isDark = theme.brightness == Brightness.dark;
 
