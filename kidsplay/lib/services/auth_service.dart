@@ -72,7 +72,7 @@ class MockUser implements User {
   }
   
   @override
-  Future<void> linkWithCredential(AuthCredential credential) async {
+  Future<UserCredential> linkWithCredential(AuthCredential credential) async {
     throw UnimplementedError('Mock user linking not implemented');
   }
   
@@ -92,6 +92,11 @@ class MockUser implements User {
   }
   
   @override
+  Future<UserCredential> linkWithProvider(AuthProvider provider) async {
+    throw UnimplementedError('Mock user provider linking not implemented');
+  }
+  
+  @override
   Future<UserCredential> reauthenticateWithCredential(AuthCredential credential) async {
     throw UnimplementedError('Mock user reauthentication not implemented');
   }
@@ -104,6 +109,11 @@ class MockUser implements User {
   @override
   Future<void> reauthenticateWithRedirect(AuthProvider provider) async {
     throw UnimplementedError('Mock user redirect reauthentication not implemented');
+  }
+  
+  @override
+  Future<UserCredential> reauthenticateWithProvider(AuthProvider provider) async {
+    throw UnimplementedError('Mock user provider reauthentication not implemented');
   }
   
   @override
