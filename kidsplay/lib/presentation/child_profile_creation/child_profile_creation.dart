@@ -8,6 +8,7 @@ import '../../models/child.dart';
 import '../../repositories/child_repository.dart';
 import '../../services/auth_service.dart';
 import '../../services/auth_guard.dart';
+import '../../utils/performance_monitor.dart';
 import './widgets/hobby_selection_grid.dart';
 import './widgets/play_duration_picker.dart';
 import './widgets/profile_photo_section.dart';
@@ -166,12 +167,17 @@ class _ChildProfileCreationState extends State<ChildProfileCreation>
   }
 
   void _completeProfile() async {
+    PerformanceMonitor.start('createChildProfile');
+    
     try {
       // Check if user is authenticated first
+      PerformanceMonitor.start('authCheck');
       final authService = AuthService();
       final currentUser = authService.getCurrentUser();
+      PerformanceMonitor.end('authCheck');
       
       if (currentUser == null || currentUser.isAnonymous) {
+        PerformanceMonitor.end('createChildProfile');
         // User is not properly authenticated, redirect to login
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
@@ -190,9 +196,12 @@ class _ChildProfileCreationState extends State<ChildProfileCreation>
       }
       
       // Get current user - now we know they're authenticated
+      PerformanceMonitor.start('ensureSignedIn');
       final user = await AuthService.ensureInitializedAndSignedIn();
+      PerformanceMonitor.end('ensureSignedIn');
       
       // Create Child object with form data
+      PerformanceMonitor.start('createChildObject');
       final child = Child(
         id: DateTime.now().millisecondsSinceEpoch.toString(), // Simple ID generation
         name: _nameController.text.trim(),
@@ -209,10 +218,16 @@ class _ChildProfileCreationState extends State<ChildProfileCreation>
         relationshipToParent: 'parent', // Default, could be made configurable
         hasCameraPermission: true, // Default permission
       );
+      PerformanceMonitor.end('createChildObject');
       
       // Save child to database
+      PerformanceMonitor.start('saveChild');
       final childRepo = ChildRepository();
       await childRepo.saveChild(user.uid, child);
+      PerformanceMonitor.end('saveChild');
+      
+      PerformanceMonitor.end('createChildProfile');
+      PerformanceMonitor.logSummary();
       
       // Show success animation and navigate
       if (mounted) {

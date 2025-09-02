@@ -9,6 +9,7 @@ import '../../models/child.dart';
 import '../../repositories/child_repository.dart';
 import '../../services/auth_service.dart';
 import '../../services/auth_guard.dart';
+import '../../utils/performance_monitor.dart';
 import './widgets/child_profile_card.dart';
 import './widgets/custom_tab_navigation.dart';
 import './widgets/dashboard_header.dart';
@@ -58,6 +59,8 @@ class _ChildSelectionDashboardState extends State<ChildSelectionDashboard> {
   Future<void> _loadChildren() async {
     if (!mounted) return;
     
+    PerformanceMonitor.start('loadChildren');
+    
     setState(() {
       _isLoading = true;
     });
@@ -65,6 +68,8 @@ class _ChildSelectionDashboardState extends State<ChildSelectionDashboard> {
     try {
       // Check cached authentication first
       if (_needsAuthRefresh()) {
+        PerformanceMonitor.start('authentication');
+        
         final authService = AuthService();
         final currentUser = authService.getCurrentUser();
         
@@ -80,6 +85,8 @@ class _ChildSelectionDashboardState extends State<ChildSelectionDashboard> {
         _cachedUser = currentUser;
         _lastAuthCheck = DateTime.now();
         
+        PerformanceMonitor.end('authentication');
+        
         // For anonymous users (demo mode), still allow access
         if (currentUser.isAnonymous) {
           print('📝 Demo mode: Using anonymous user');
@@ -90,13 +97,18 @@ class _ChildSelectionDashboardState extends State<ChildSelectionDashboard> {
       User user;
       if (_cachedUser != null) {
         user = _cachedUser!;
+        PerformanceMonitor.start('cachedAuth');
+        PerformanceMonitor.end('cachedAuth');
       } else {
+        PerformanceMonitor.start('ensureSignedIn');
         try {
           user = await AuthService.ensureInitializedAndSignedIn()
               .timeout(Duration(seconds: 10)); // 10 second timeout
           _cachedUser = user;
           _lastAuthCheck = DateTime.now();
+          PerformanceMonitor.end('ensureSignedIn');
         } on TimeoutException {
+          PerformanceMonitor.end('ensureSignedIn');
           throw Exception('Authentication timeout - please check your connection');
         }
       }
@@ -108,17 +120,23 @@ class _ChildSelectionDashboardState extends State<ChildSelectionDashboard> {
       }
       
       // Listen to children updates with better error handling
+      PerformanceMonitor.start('childrenStream');
       _childRepository.watchChildrenOf(user.uid).listen(
         (children) {
+          PerformanceMonitor.end('childrenStream');
           if (mounted) {
             setState(() {
               _children = children;
               _lastUpdated = DateTime.now();
               _isLoading = false;
             });
+            PerformanceMonitor.end('loadChildren');
+            PerformanceMonitor.logSummary();
           }
         },
         onError: (error) {
+          PerformanceMonitor.end('childrenStream');
+          PerformanceMonitor.end('loadChildren');
           print('Error in children stream: $error');
           if (mounted) {
             setState(() {
@@ -139,6 +157,7 @@ class _ChildSelectionDashboardState extends State<ChildSelectionDashboard> {
         },
       );
     } catch (error) {
+      PerformanceMonitor.end('loadChildren');
       print('Error loading children: $error');
       if (mounted) {
         setState(() {
@@ -575,6 +594,8 @@ class _ChildSelectionDashboardState extends State<ChildSelectionDashboard> {
   Future<void> _refreshData() async {
     if (_isRefreshing) return; // Prevent multiple simultaneous refreshes
     
+    PerformanceMonitor.start('refreshData');
+    
     setState(() {
       _isRefreshing = true;
     });
@@ -596,6 +617,8 @@ class _ChildSelectionDashboardState extends State<ChildSelectionDashboard> {
         // Provide haptic feedback
         HapticFeedback.mediumImpact();
         
+        PerformanceMonitor.end('refreshData');
+        
         // Show success message
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
@@ -607,6 +630,7 @@ class _ChildSelectionDashboardState extends State<ChildSelectionDashboard> {
         );
       }
     } catch (error) {
+      PerformanceMonitor.end('refreshData');
       if (mounted) {
         setState(() {
           _isRefreshing = false;
