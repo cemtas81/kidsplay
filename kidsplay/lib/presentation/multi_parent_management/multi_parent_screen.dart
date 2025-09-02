@@ -1031,12 +1031,12 @@ class _MultiParentScreenState extends State<MultiParentScreen>
             ),
             CheckboxListTile(
               title: Text('Create Activities'),
-              value: parent.role == ParentRole.primary,
+              value: parent.isPrimary,
               onChanged: (value) {},
             ),
             CheckboxListTile(
               title: Text('Manage Settings'),
-              value: parent.role == ParentRole.primary,
+              value: parent.isPrimary,
               onChanged: (value) {},
             ),
           ],

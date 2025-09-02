@@ -9,6 +9,7 @@ import '../presentation/multi_parent_management/multi_parent_screen.dart';
 import '../presentation/password_reset/password_reset_screen.dart';
 import '../presentation/email_verification/email_verification_screen.dart';
 import '../presentation/progress_tracking/progress_dashboard_screen.dart';
+import '../models/child.dart';
 
 class AppRoutes {
   // Application route constants
@@ -35,6 +36,31 @@ class AppRoutes {
     multiParentManagement: (context) => const MultiParentScreen(),
     passwordReset: (context) => const PasswordResetScreen(),
     emailVerification: (context) => const EmailVerificationScreen(),
-    progressTracking: (context) => const ProgressDashboardScreen(),
+    progressTracking: (context) {
+      final child = ModalRoute.of(context)?.settings.arguments as Child?;
+      if (child != null) {
+        return ProgressDashboardScreen(child: child);
+      } else {
+        // Fallback to a default/mock child if no argument provided
+        return ProgressDashboardScreen(
+          child: Child(
+            id: 'mock-child-id',
+            name: 'Demo Child',
+            surname: 'Demo',
+            birthDate: DateTime(2020, 1, 1),
+            gender: 'unknown',
+            hobbies: [],
+            hasScreenDependency: false,
+            screenDependencyLevel: 'low',
+            usesScreenDuringMeals: false,
+            wantsToChange: false,
+            dailyPlayTime: '1-2 hours',
+            parentIds: ['mock-parent-id'],
+            relationshipToParent: 'parent',
+            hasCameraPermission: false,
+          ),
+        );
+      }
+    },
   };
 }
