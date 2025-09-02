@@ -6,6 +6,12 @@ import '../services/auth_service.dart';
 class AuthGuard {
   static final AuthService _authService = AuthService();
 
+  // Add method to clear auth cache when needed
+  static void clearAuthCache() {
+    _AuthGuardWidgetState._lastAuthCheck = null;
+    _AuthGuardWidgetState._lastAuthResult = null;
+  }
+
   /// Check if user is authenticated and redirect if not
   static Future<bool> requireAuth(BuildContext context) async {
     // TODO: TEMPORARY MOCK AUTH HANDLING - REMOVE WHEN REAL AUTH SERVICE IS RESTORED
@@ -162,6 +168,8 @@ class AuthGuardWidget extends StatefulWidget {
 class _AuthGuardWidgetState extends State<AuthGuardWidget> {
   bool _isChecking = true;
   bool _isAuthorized = false;
+  static DateTime? _lastAuthCheck;
+  static bool? _lastAuthResult;
 
   @override
   void initState() {
@@ -170,11 +178,31 @@ class _AuthGuardWidgetState extends State<AuthGuardWidget> {
   }
 
   Future<void> _checkAuth() async {
+    // Cache authentication result for 30 seconds to reduce overhead
+    if (_lastAuthCheck != null && 
+        _lastAuthResult != null && 
+        DateTime.now().difference(_lastAuthCheck!).inSeconds < 30) {
+      setState(() {
+        _isChecking = false;
+        _isAuthorized = _lastAuthResult!;
+      });
+      
+      if (_lastAuthResult!) {
+        // Start session monitoring for this screen
+        AuthGuard.startSessionMonitoring(context);
+      }
+      return;
+    }
+    
     bool authorized = await AuthGuard.requireAuth(context);
     
     if (authorized && widget.requireEmailVerification) {
       authorized = await AuthGuard.requireEmailVerification(context);
     }
+
+    // Cache the result
+    _lastAuthCheck = DateTime.now();
+    _lastAuthResult = authorized;
 
     if (mounted) {
       setState(() {
