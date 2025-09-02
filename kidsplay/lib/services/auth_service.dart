@@ -201,6 +201,9 @@ class AuthService {
   // - false: Firebase authentication (production mode)
   static const bool _useMockAuth = true; // Set to false when real auth is restored
   
+  // Public getter to expose mock mode status for other services
+  static bool get isUsingMockAuth => _useMockAuth;
+  
   // ==========================================
   // MOCK AUTHENTICATION SETTINGS
   // ==========================================
