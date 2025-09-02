@@ -3,6 +3,20 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:google_sign_in/google_sign_in.dart';
 import '../firebase_options.dart';
 
+// ==========================================
+// AUTHENTICATION MODE CONFIGURATION
+// ==========================================
+// Set this flag to control authentication behavior:
+// - true:  Use mock authentication (demo mode) - works offline, uses demo credentials
+// - false: Use Firebase authentication (production mode) - requires Firebase connection
+//
+// DEMO CREDENTIALS (when _useMockAuth = true):
+// Email: demo@demo.com
+// Password: demo1234
+//
+// This allows the app to work seamlessly whether Firebase is available or not.
+// ==========================================
+
 // TODO: TEMPORARY MOCK USER CLASS - REMOVE WHEN REAL AUTH SERVICE IS RESTORED
 // This mock user implementation is used when Firebase auth is unavailable
 class MockUser implements User {
@@ -179,22 +193,39 @@ class _MockUserMetadata implements UserMetadata {
 }
 
 class AuthService {
-  // Firebase is already initialized in main.dart, no need to initialize again
-  
-  // TODO: TEMPORARY MOCK AUTHENTICATION - REMOVE WHEN REAL AUTH SERVICE IS RESTORED
-  // This is a temporary workaround while the authentication service is unavailable
+  // ==========================================
+  // AUTHENTICATION MODE CONFIGURATION
+  // ==========================================
+  // CRITICAL: Set this flag to control authentication mode
+  // - true:  Mock authentication (demo/offline mode) 
+  // - false: Firebase authentication (production mode)
   static const bool _useMockAuth = true; // Set to false when real auth is restored
+  
+  // ==========================================
+  // MOCK AUTHENTICATION SETTINGS
+  // ==========================================
   static const String _mockUserId = 'mock-user-12345';
   static User? _mockUser; // Store mock user for session persistence
   
+  // Demo credentials for testing (both mock and Firebase fallback)
+  static const String _demoEmail = 'demo@demo.com';
+  static const String _demoPassword = 'demo1234';
+  
+  // ==========================================
+  // PERFORMANCE OPTIMIZATION
+  // ==========================================
   // Cache for authentication state to reduce Firebase calls
   static DateTime? _lastAuthCheck;
   static bool? _lastAuthResult;
   
+  // ==========================================
+  // FIREBASE INITIALIZATION AND SAFETY CHECKS
+  // ==========================================
   static Future<void> _ensureFirebaseReady() async {
     // Skip Firebase initialization check in mock mode
     if (_useMockAuth) {
       print('🎭 Mock authentication mode enabled - bypassing Firebase');
+      print('ℹ️ Use demo credentials: $_demoEmail / $_demoPassword');
       return;
     }
     
@@ -205,395 +236,729 @@ class AuthService {
     print('✅ Firebase is ready for authentication');
   }
 
+  // ==========================================
+  // USER MANAGEMENT UTILITIES
+  // ==========================================
   static Future<User> ensureInitializedAndSignedIn() async {
-    if (_useMockAuth && _mockUser != null) {
-      return _mockUser!;
+    try {
+      if (_useMockAuth && _mockUser != null) {
+        print('✅ Mock user already authenticated: ${_mockUser!.email}');
+        return _mockUser!;
+      }
+      
+      await _ensureFirebaseReady();
+      final auth = FirebaseAuth.instance;
+      if (auth.currentUser == null) {
+        throw Exception('No authenticated user found. Please login first.');
+      }
+      print('✅ Firebase user authenticated: ${auth.currentUser!.email}');
+      return auth.currentUser!;
+    } catch (e) {
+      print('❌ Authentication check failed: $e');
+      throw Exception('Authentication required. Please login to continue. Error: $e');
     }
-    
-    await _ensureFirebaseReady();
-    final auth = FirebaseAuth.instance;
-    if (auth.currentUser == null) {
-      throw Exception('No authenticated user found. Please login first.');
-    }
-    return auth.currentUser!;
   }
 
   static Future<String> getUid() async {
-    if (_useMockAuth && _mockUser != null) {
-      return _mockUser!.uid;
+    try {
+      if (_useMockAuth && _mockUser != null) {
+        return _mockUser!.uid;
+      }
+      
+      final user = await ensureInitializedAndSignedIn();
+      return user.uid;
+    } catch (e) {
+      print('❌ Failed to get user ID: $e');
+      throw Exception('Could not retrieve user ID. Please ensure you are logged in. Error: $e');
     }
-    
-    final user = await ensureInitializedAndSignedIn();
-    return user.uid;
   }
 
-  // TODO: TEMPORARY MOCK CREDENTIALS - REMOVE WHEN REAL AUTH SERVICE IS RESTORED
-  // Demo credentials for testing during auth service downtime
-  static const String _demoEmail = 'demo@demo.com';
-  static const String _demoPassword = 'demo1234';
-  
+  // ==========================================
+  // AUTHENTICATION CREDENTIAL VALIDATION
+  // ==========================================
   // Check if using demo credentials
   bool _isDemoCredentials(String email, String password) {
     return email.toLowerCase() == _demoEmail && password == _demoPassword;
   }
 
-  // Email/Password Authentication methods
+  // ==========================================
+  // EMAIL/PASSWORD AUTHENTICATION
+  // ==========================================
   Future<User?> signInWithEmailAndPassword(String email, String password) async {
-    // TODO: TEMPORARY MOCK AUTHENTICATION - REMOVE WHEN REAL AUTH SERVICE IS RESTORED
-    if (_useMockAuth) {
-      print('🎭 Mock authentication mode - checking credentials');
-      
-      // Only allow the specific demo credentials
-      if (_isDemoCredentials(email, password)) {
-        print('✅ Mock login successful for: $email');
+    try {
+      // MOCK AUTHENTICATION MODE
+      if (_useMockAuth) {
+        print('🎭 Mock authentication mode - validating credentials');
         
-        // Create and store mock user
-        _mockUser = MockUser(
-          uid: _mockUserId,
-          email: email,
-          displayName: 'Demo User',
-          emailVerified: true,
-          isAnonymous: false,
-        );
-        
-        return _mockUser;
-      } else {
-        print('❌ Mock login failed - invalid credentials provided');
-        print('ℹ️ Only demo credentials are accepted: $_demoEmail / $_demoPassword');
-        throw FirebaseAuthException(
-          code: 'invalid-credential',
-          message: 'Authentication service is currently unavailable. Please use demo credentials: $_demoEmail / $_demoPassword',
-        );
-      }
-    }
-    
-    // Original Firebase authentication logic (when mock mode is disabled)
-    await _ensureFirebaseReady();
-    
-    // Handle demo credentials with fallback if Firebase fails
-    if (_isDemoCredentials(email, password)) {
-      try {
-        print('🔐 Attempting to sign in user: $email');
-        final credential = await FirebaseAuth.instance.signInWithEmailAndPassword(
-          email: email,
-          password: password,
-        );
-        print('✅ Sign in successful for user: ${credential.user?.email}');
-        return credential.user;
-      } catch (e) {
-        print('⚠️ Firebase sign in failed, but demo credentials provided: $e');
-        print('🎭 Using demo mode for development');
-        
-        // For demo purposes, use anonymous authentication as fallback
-        try {
-          final anonCredential = await FirebaseAuth.instance.signInAnonymously();
-          print('✅ Demo mode: Anonymous user created for development');
-          return anonCredential.user;
-        } catch (anonError) {
-          print('❌ Anonymous authentication also failed: $anonError');
-          print('🚨 Firebase appears to be completely unavailable');
-          rethrow; // If even anonymous auth fails, Firebase is completely down
+        // Only allow the specific demo credentials
+        if (_isDemoCredentials(email, password)) {
+          print('✅ Mock login successful for: $email');
+          
+          // Create and store mock user
+          _mockUser = MockUser(
+            uid: _mockUserId,
+            email: email,
+            displayName: 'Demo User',
+            emailVerified: true,
+            isAnonymous: false,
+          );
+          
+          // Clear auth cache
+          _lastAuthCheck = DateTime.now();
+          _lastAuthResult = true;
+          
+          return _mockUser;
+        } else {
+          print('❌ Mock login failed - invalid credentials provided');
+          print('ℹ️ Demo credentials required: $_demoEmail / $_demoPassword');
+          throw FirebaseAuthException(
+            code: 'invalid-credential',
+            message: 'Authentication service is in demo mode. Please use demo credentials:\nEmail: $_demoEmail\nPassword: $_demoPassword',
+          );
         }
       }
-    }
-    
-    try {
+      
+      // FIREBASE AUTHENTICATION MODE
+      await _ensureFirebaseReady();
+      
+      // Handle demo credentials with fallback if Firebase fails
+      if (_isDemoCredentials(email, password)) {
+        try {
+          print('🔐 Attempting to sign in user: $email');
+          final credential = await FirebaseAuth.instance.signInWithEmailAndPassword(
+            email: email,
+            password: password,
+          );
+          print('✅ Firebase sign in successful for user: ${credential.user?.email}');
+          _clearAuthCache();
+          return credential.user;
+        } catch (e) {
+          print('⚠️ Firebase sign in failed, but demo credentials provided: $e');
+          print('🎭 Falling back to demo mode for development');
+          
+          // For demo purposes, use anonymous authentication as fallback
+          try {
+            final anonCredential = await FirebaseAuth.instance.signInAnonymously();
+            print('✅ Demo mode: Anonymous user created for development');
+            return anonCredential.user;
+          } catch (anonError) {
+            print('❌ Anonymous authentication also failed: $anonError');
+            print('🚨 Firebase appears to be completely unavailable');
+            throw FirebaseAuthException(
+              code: 'firebase-unavailable',
+              message: 'Authentication service is temporarily unavailable. Please try again later or contact support.',
+            );
+          }
+        }
+      }
+      
+      // Regular Firebase authentication for non-demo credentials
       print('🔐 Attempting to sign in user: $email');
       final credential = await FirebaseAuth.instance.signInWithEmailAndPassword(
         email: email,
         password: password,
       );
       print('✅ Sign in successful for user: ${credential.user?.email}');
+      _clearAuthCache();
       return credential.user;
+      
     } catch (e) {
       print('❌ Sign in failed: $e');
+      _clearAuthCache();
+      
+      // Provide user-friendly error messages
+      if (e is FirebaseAuthException) {
+        switch (e.code) {
+          case 'user-not-found':
+            throw FirebaseAuthException(
+              code: e.code,
+              message: 'No account found with this email address. Please check your email or create a new account.',
+            );
+          case 'wrong-password':
+            throw FirebaseAuthException(
+              code: e.code,
+              message: 'Incorrect password. Please check your password or use "Forgot Password" to reset it.',
+            );
+          case 'invalid-email':
+            throw FirebaseAuthException(
+              code: e.code,
+              message: 'Please enter a valid email address.',
+            );
+          case 'user-disabled':
+            throw FirebaseAuthException(
+              code: e.code,
+              message: 'This account has been disabled. Please contact support for assistance.',
+            );
+          case 'too-many-requests':
+            throw FirebaseAuthException(
+              code: e.code,
+              message: 'Too many failed login attempts. Please try again later or reset your password.',
+            );
+          default:
+            rethrow;
+        }
+      }
       rethrow;
     }
   }
 
   Future<User?> createUserWithEmailAndPassword(String email, String password) async {
-    // TODO: TEMPORARY MOCK AUTHENTICATION - REMOVE WHEN REAL AUTH SERVICE IS RESTORED
-    if (_useMockAuth) {
-      print('🎭 Mock registration mode - checking credentials');
-      
-      // Only allow the specific demo credentials for registration too
-      if (_isDemoCredentials(email, password)) {
-        print('✅ Mock registration successful for: $email');
+    try {
+      // MOCK AUTHENTICATION MODE
+      if (_useMockAuth) {
+        print('🎭 Mock registration mode - validating credentials');
         
-        // Create and store mock user (same as login for demo purposes)
-        _mockUser = MockUser(
-          uid: _mockUserId,
-          email: email,
-          displayName: 'Demo User',
-          emailVerified: true,
-          isAnonymous: false,
-        );
-        
-        return _mockUser;
-      } else {
-        print('❌ Mock registration failed - invalid credentials provided');
-        print('ℹ️ Only demo credentials are accepted: $_demoEmail / $_demoPassword');
-        throw FirebaseAuthException(
-          code: 'invalid-credential',
-          message: 'Registration service is currently unavailable. Please use demo credentials: $_demoEmail / $_demoPassword',
-        );
-      }
-    }
-    
-    // Original Firebase authentication logic (when mock mode is disabled)
-    await _ensureFirebaseReady();
-    
-    // Handle demo credentials for user creation
-    if (_isDemoCredentials(email, password)) {
-      try {
-        print('👤 Attempting to create user: $email');
-        final credential = await FirebaseAuth.instance.createUserWithEmailAndPassword(
-          email: email,
-          password: password,
-        );
-        print('✅ User creation successful for: ${credential.user?.email}');
-        return credential.user;
-      } catch (e) {
-        print('⚠️ User creation failed, but demo credentials provided: $e');
-        print('🎭 Using demo mode - signing in with anonymous user');
-        
-        // For demo purposes, use anonymous authentication as fallback
-        try {
-          final anonCredential = await FirebaseAuth.instance.signInAnonymously();
-          print('✅ Demo mode: Anonymous user created for development');
-          return anonCredential.user;
-        } catch (anonError) {
-          print('❌ Anonymous authentication also failed: $anonError');
-          print('🚨 Firebase appears to be completely unavailable');
-          rethrow; // If even anonymous auth fails, Firebase is completely down
+        // Only allow the specific demo credentials for registration too
+        if (_isDemoCredentials(email, password)) {
+          print('✅ Mock registration successful for: $email');
+          
+          // Create and store mock user (same as login for demo purposes)
+          _mockUser = MockUser(
+            uid: _mockUserId,
+            email: email,
+            displayName: 'Demo User',
+            emailVerified: true,
+            isAnonymous: false,
+          );
+          
+          // Clear auth cache
+          _lastAuthCheck = DateTime.now();
+          _lastAuthResult = true;
+          
+          return _mockUser;
+        } else {
+          print('❌ Mock registration failed - invalid credentials provided');
+          print('ℹ️ Demo credentials required: $_demoEmail / $_demoPassword');
+          throw FirebaseAuthException(
+            code: 'invalid-credential',
+            message: 'Registration service is in demo mode. Please use demo credentials:\nEmail: $_demoEmail\nPassword: $_demoPassword',
+          );
         }
       }
-    }
-    
-    try {
+      
+      // FIREBASE AUTHENTICATION MODE
+      await _ensureFirebaseReady();
+      
+      // Handle demo credentials for user creation
+      if (_isDemoCredentials(email, password)) {
+        try {
+          print('👤 Attempting to create user: $email');
+          final credential = await FirebaseAuth.instance.createUserWithEmailAndPassword(
+            email: email,
+            password: password,
+          );
+          print('✅ User creation successful for: ${credential.user?.email}');
+          _clearAuthCache();
+          return credential.user;
+        } catch (e) {
+          print('⚠️ User creation failed, but demo credentials provided: $e');
+          print('🎭 Using demo mode - signing in with anonymous user');
+          
+          // For demo purposes, use anonymous authentication as fallback
+          try {
+            final anonCredential = await FirebaseAuth.instance.signInAnonymously();
+            print('✅ Demo mode: Anonymous user created for development');
+            return anonCredential.user;
+          } catch (anonError) {
+            print('❌ Anonymous authentication also failed: $anonError');
+            print('🚨 Firebase appears to be completely unavailable');
+            throw FirebaseAuthException(
+              code: 'firebase-unavailable',
+              message: 'Registration service is temporarily unavailable. Please try again later or contact support.',
+            );
+          }
+        }
+      }
+      
+      // Regular Firebase user creation for non-demo credentials
       print('👤 Attempting to create user: $email');
       final credential = await FirebaseAuth.instance.createUserWithEmailAndPassword(
         email: email,
         password: password,
       );
       print('✅ User creation successful for: ${credential.user?.email}');
+      _clearAuthCache();
       return credential.user;
+      
     } catch (e) {
       print('❌ User creation failed: $e');
+      _clearAuthCache();
+      
+      // Provide user-friendly error messages
+      if (e is FirebaseAuthException) {
+        switch (e.code) {
+          case 'email-already-in-use':
+            throw FirebaseAuthException(
+              code: e.code,
+              message: 'An account with this email already exists. Please use a different email or try signing in.',
+            );
+          case 'invalid-email':
+            throw FirebaseAuthException(
+              code: e.code,
+              message: 'Please enter a valid email address.',
+            );
+          case 'weak-password':
+            throw FirebaseAuthException(
+              code: e.code,
+              message: 'Password is too weak. Please use at least 6 characters with a mix of letters and numbers.',
+            );
+          case 'operation-not-allowed':
+            throw FirebaseAuthException(
+              code: e.code,
+              message: 'Email/password registration is not enabled. Please contact support.',
+            );
+          default:
+            rethrow;
+        }
+      }
       rethrow;
     }
   }
 
+  // ==========================================
+  // SESSION MANAGEMENT
+  // ==========================================
   Future<void> signOut() async {
-    // TODO: TEMPORARY MOCK AUTH HANDLING - REMOVE WHEN REAL AUTH SERVICE IS RESTORED
-    if (_useMockAuth) {
-      print('🎭 Mock sign out');
-      _mockUser = null;
-      // Clear auth cache
-      _lastAuthCheck = null;
-      _lastAuthResult = null;
-      return;
+    try {
+      // MOCK AUTHENTICATION MODE
+      if (_useMockAuth) {
+        print('🎭 Mock sign out');
+        _mockUser = null;
+        _clearAuthCache();
+        print('✅ Mock user signed out successfully');
+        return;
+      }
+      
+      // FIREBASE AUTHENTICATION MODE
+      await _ensureFirebaseReady();
+      await FirebaseAuth.instance.signOut();
+      _clearAuthCache();
+      print('✅ Firebase user signed out successfully');
+      
+    } catch (e) {
+      print('❌ Sign out failed: $e');
+      // Clear cache anyway in case of errors
+      _clearAuthCache();
+      rethrow;
     }
-    
-    await FirebaseAuth.instance.signOut();
-    // Clear auth cache
+  }
+
+  User? getCurrentUser() {
+    try {
+      // MOCK AUTHENTICATION MODE
+      if (_useMockAuth) {
+        return _mockUser;
+      }
+      
+      // FIREBASE AUTHENTICATION MODE
+      return FirebaseAuth.instance.currentUser;
+      
+    } catch (e) {
+      print('❌ Failed to get current user: $e');
+      return null;
+    }
+  }
+
+  // ==========================================
+  // AUTHENTICATION STATE CHECKING
+  // ==========================================
+  bool isAuthenticated() {
+    try {
+      // Use cached result if available and recent (within 30 seconds)
+      if (_lastAuthCheck != null && 
+          _lastAuthResult != null && 
+          DateTime.now().difference(_lastAuthCheck!).inSeconds < 30) {
+        return _lastAuthResult!;
+      }
+      
+      // Check authentication based on current mode
+      bool result;
+      if (_useMockAuth) {
+        result = _mockUser != null && !_mockUser!.isAnonymous;
+        if (result) {
+          print('✅ Mock user is authenticated: ${_mockUser!.email}');
+        } else {
+          print('ℹ️ No mock user authenticated');
+        }
+      } else {
+        final user = FirebaseAuth.instance.currentUser;
+        result = user != null && !user.isAnonymous;
+        if (result) {
+          print('✅ Firebase user is authenticated: ${user.email}');
+        } else {
+          print('ℹ️ No Firebase user authenticated');
+        }
+      }
+      
+      // Cache the result
+      _lastAuthCheck = DateTime.now();
+      _lastAuthResult = result;
+      
+      return result;
+      
+    } catch (e) {
+      print('❌ Authentication check failed: $e');
+      _clearAuthCache();
+      return false;
+    }
+  }
+
+  // ==========================================
+  // UTILITY METHODS
+  // ==========================================
+  void _clearAuthCache() {
     _lastAuthCheck = null;
     _lastAuthResult = null;
   }
 
-  User? getCurrentUser() {
-    // TODO: TEMPORARY MOCK AUTH HANDLING - REMOVE WHEN REAL AUTH SERVICE IS RESTORED
-    if (_useMockAuth) {
-      return _mockUser;
-    }
-    
-    return FirebaseAuth.instance.currentUser;
-  }
-
-  // Check if user is authenticated (not anonymous)
-  bool isAuthenticated() {
-    // Use cached result if available and recent (within 30 seconds)
-    if (_lastAuthCheck != null && 
-        _lastAuthResult != null && 
-        DateTime.now().difference(_lastAuthCheck!).inSeconds < 30) {
-      return _lastAuthResult!;
-    }
-    
-    // TODO: TEMPORARY MOCK AUTH HANDLING - REMOVE WHEN REAL AUTH SERVICE IS RESTORED
-    bool result;
-    if (_useMockAuth) {
-      result = _mockUser != null && !_mockUser!.isAnonymous;
-    } else {
-      final user = FirebaseAuth.instance.currentUser;
-      result = user != null && !user.isAnonymous;
-    }
-    
-    // Cache the result
-    _lastAuthCheck = DateTime.now();
-    _lastAuthResult = result;
-    
-    return result;
-  }
-
+  // ==========================================
+  // FIREBASE-SPECIFIC UTILITIES (Not available in mock mode)
+  // ==========================================
+  
   // Get current user safely with error handling
   static Future<User?> getCurrentUserSafely() async {
-    await _ensureFirebaseReady();
-    return FirebaseAuth.instance.currentUser;
+    try {
+      if (_useMockAuth) {
+        print('ℹ️ getCurrentUserSafely called in mock mode - returning mock user');
+        return _mockUser;
+      }
+      
+      await _ensureFirebaseReady();
+      return FirebaseAuth.instance.currentUser;
+    } catch (e) {
+      print('❌ Failed to get current user safely: $e');
+      return null;
+    }
   }
 
   // Stream of authentication state changes
   Stream<User?> get authStateChanges {
+    if (_useMockAuth) {
+      print('⚠️ authStateChanges not available in mock mode - returning empty stream');
+      return Stream.empty();
+    }
     return FirebaseAuth.instance.authStateChanges();
   }
 
   // Password reset functionality
   Future<void> sendPasswordResetEmail(String email) async {
-    await _ensureFirebaseReady();
-    
     try {
+      if (_useMockAuth) {
+        print('🎭 Mock password reset email sent to: $email');
+        print('ℹ️ In demo mode, password reset is simulated');
+        return;
+      }
+      
+      await _ensureFirebaseReady();
+      
       print('📧 Sending password reset email to: $email');
       await FirebaseAuth.instance.sendPasswordResetEmail(email: email);
       print('✅ Password reset email sent successfully');
+      
     } catch (e) {
       print('❌ Failed to send password reset email: $e');
+      
+      if (e is FirebaseAuthException) {
+        switch (e.code) {
+          case 'user-not-found':
+            throw FirebaseAuthException(
+              code: e.code,
+              message: 'No account found with this email address. Please check your email or create a new account.',
+            );
+          case 'invalid-email':
+            throw FirebaseAuthException(
+              code: e.code,
+              message: 'Please enter a valid email address.',
+            );
+          default:
+            rethrow;
+        }
+      }
       rethrow;
     }
   }
 
   // Email verification methods
   Future<void> sendEmailVerification() async {
-    await _ensureFirebaseReady();
-    final user = FirebaseAuth.instance.currentUser;
-    
-    if (user != null && !user.emailVerified) {
-      try {
+    try {
+      if (_useMockAuth) {
+        print('🎭 Mock email verification sent to: ${_mockUser?.email}');
+        print('ℹ️ In demo mode, email verification is simulated');
+        return;
+      }
+      
+      await _ensureFirebaseReady();
+      final user = FirebaseAuth.instance.currentUser;
+      
+      if (user != null && !user.emailVerified) {
         print('📧 Sending email verification to: ${user.email}');
         await user.sendEmailVerification();
         print('✅ Email verification sent successfully');
-      } catch (e) {
-        print('❌ Failed to send email verification: $e');
-        rethrow;
+      } else if (user?.emailVerified == true) {
+        print('ℹ️ Email already verified for: ${user?.email}');
+      } else {
+        throw Exception('No user found to send verification email');
       }
-    } else if (user?.emailVerified == true) {
-      print('ℹ️ Email already verified for: ${user?.email}');
-    } else {
-      throw Exception('No user found to send verification email');
+    } catch (e) {
+      print('❌ Failed to send email verification: $e');
+      rethrow;
     }
   }
 
   Future<void> reloadUser() async {
-    await _ensureFirebaseReady();
-    final user = FirebaseAuth.instance.currentUser;
-    
-    if (user != null) {
-      await user.reload();
-      print('🔄 User data reloaded');
+    try {
+      if (_useMockAuth) {
+        print('🎭 Mock user data reloaded');
+        return;
+      }
+      
+      await _ensureFirebaseReady();
+      final user = FirebaseAuth.instance.currentUser;
+      
+      if (user != null) {
+        await user.reload();
+        print('🔄 User data reloaded');
+      }
+    } catch (e) {
+      print('❌ Failed to reload user: $e');
+      rethrow;
     }
   }
 
   bool get isEmailVerified {
-    final user = FirebaseAuth.instance.currentUser;
-    return user?.emailVerified ?? false;
+    try {
+      if (_useMockAuth) {
+        return _mockUser?.emailVerified ?? false;
+      }
+      
+      final user = FirebaseAuth.instance.currentUser;
+      return user?.emailVerified ?? false;
+    } catch (e) {
+      print('❌ Failed to check email verification: $e');
+      return false;
+    }
   }
 
+  // ==========================================
+  // USER PROFILE MANAGEMENT
+  // ==========================================
+  
   // Update user profile methods
   Future<void> updateDisplayName(String displayName) async {
-    await _ensureFirebaseReady();
-    final user = FirebaseAuth.instance.currentUser;
-    
-    if (user != null) {
-      try {
+    try {
+      if (_useMockAuth) {
+        print('🎭 Mock display name updated to: $displayName');
+        if (_mockUser != null) {
+          // Note: MockUser displayName is final, so we simulate the update
+          print('✅ Mock display name update successful');
+        }
+        return;
+      }
+      
+      await _ensureFirebaseReady();
+      final user = FirebaseAuth.instance.currentUser;
+      
+      if (user != null) {
         await user.updateDisplayName(displayName);
         await user.reload();
         print('✅ Display name updated to: $displayName');
-      } catch (e) {
-        print('❌ Failed to update display name: $e');
-        rethrow;
+      } else {
+        throw Exception('No authenticated user found');
       }
-    } else {
-      throw Exception('No authenticated user found');
+    } catch (e) {
+      print('❌ Failed to update display name: $e');
+      rethrow;
     }
   }
 
   Future<void> updateEmail(String newEmail) async {
-    await _ensureFirebaseReady();
-    final user = FirebaseAuth.instance.currentUser;
-    
-    if (user != null) {
-      try {
+    try {
+      if (_useMockAuth) {
+        print('🎭 Mock email update to: $newEmail (verification simulated)');
+        print('✅ Mock email update verification sent');
+        return;
+      }
+      
+      await _ensureFirebaseReady();
+      final user = FirebaseAuth.instance.currentUser;
+      
+      if (user != null) {
         await user.verifyBeforeUpdateEmail(newEmail);
         print('✅ Email update verification sent to: $newEmail');
-      } catch (e) {
-        print('❌ Failed to update email: $e');
-        rethrow;
+      } else {
+        throw Exception('No authenticated user found');
       }
-    } else {
-      throw Exception('No authenticated user found');
+    } catch (e) {
+      print('❌ Failed to update email: $e');
+      
+      if (e is FirebaseAuthException) {
+        switch (e.code) {
+          case 'requires-recent-login':
+            throw FirebaseAuthException(
+              code: e.code,
+              message: 'This operation requires recent authentication. Please sign in again and try again.',
+            );
+          case 'email-already-in-use':
+            throw FirebaseAuthException(
+              code: e.code,
+              message: 'This email address is already in use by another account.',
+            );
+          case 'invalid-email':
+            throw FirebaseAuthException(
+              code: e.code,
+              message: 'Please enter a valid email address.',
+            );
+          default:
+            rethrow;
+        }
+      }
+      rethrow;
     }
   }
 
   Future<void> updatePassword(String newPassword) async {
-    await _ensureFirebaseReady();
-    final user = FirebaseAuth.instance.currentUser;
-    
-    if (user != null) {
-      try {
+    try {
+      if (_useMockAuth) {
+        print('🎭 Mock password update successful');
+        return;
+      }
+      
+      await _ensureFirebaseReady();
+      final user = FirebaseAuth.instance.currentUser;
+      
+      if (user != null) {
         await user.updatePassword(newPassword);
         print('✅ Password updated successfully');
-      } catch (e) {
-        print('❌ Failed to update password: $e');
-        rethrow;
+      } else {
+        throw Exception('No authenticated user found');
       }
-    } else {
-      throw Exception('No authenticated user found');
+    } catch (e) {
+      print('❌ Failed to update password: $e');
+      
+      if (e is FirebaseAuthException) {
+        switch (e.code) {
+          case 'requires-recent-login':
+            throw FirebaseAuthException(
+              code: e.code,
+              message: 'This operation requires recent authentication. Please sign in again and try again.',
+            );
+          case 'weak-password':
+            throw FirebaseAuthException(
+              code: e.code,
+              message: 'Password is too weak. Please use at least 6 characters with a mix of letters and numbers.',
+            );
+          default:
+            rethrow;
+        }
+      }
+      rethrow;
     }
   }
 
+  // ==========================================
+  // RE-AUTHENTICATION AND SECURITY
+  // ==========================================
+  
   // Re-authentication for sensitive operations
   Future<void> reauthenticateWithPassword(String password) async {
-    await _ensureFirebaseReady();
-    final user = FirebaseAuth.instance.currentUser;
-    
-    if (user != null && user.email != null) {
-      try {
+    try {
+      if (_useMockAuth) {
+        print('🎭 Mock re-authentication successful');
+        return;
+      }
+      
+      await _ensureFirebaseReady();
+      final user = FirebaseAuth.instance.currentUser;
+      
+      if (user != null && user.email != null) {
         final credential = EmailAuthProvider.credential(
           email: user.email!,
           password: password,
         );
         await user.reauthenticateWithCredential(credential);
         print('✅ User re-authenticated successfully');
-      } catch (e) {
-        print('❌ Re-authentication failed: $e');
-        rethrow;
+      } else {
+        throw Exception('No authenticated user found or email missing');
       }
-    } else {
-      throw Exception('No authenticated user found or email missing');
+    } catch (e) {
+      print('❌ Re-authentication failed: $e');
+      
+      if (e is FirebaseAuthException) {
+        switch (e.code) {
+          case 'wrong-password':
+            throw FirebaseAuthException(
+              code: e.code,
+              message: 'Incorrect password. Please check your password and try again.',
+            );
+          case 'user-not-found':
+            throw FirebaseAuthException(
+              code: e.code,
+              message: 'User account not found. Please sign in again.',
+            );
+          default:
+            rethrow;
+        }
+      }
+      rethrow;
     }
   }
 
   // Delete user account
   Future<void> deleteAccount() async {
-    await _ensureFirebaseReady();
-    final user = FirebaseAuth.instance.currentUser;
-    
-    if (user != null) {
-      try {
-        await user.delete();
-        print('✅ User account deleted successfully');
-      } catch (e) {
-        print('❌ Failed to delete account: $e');
-        rethrow;
+    try {
+      if (_useMockAuth) {
+        print('🎭 Mock account deletion successful');
+        _mockUser = null;
+        _clearAuthCache();
+        return;
       }
-    } else {
-      throw Exception('No authenticated user found');
+      
+      await _ensureFirebaseReady();
+      final user = FirebaseAuth.instance.currentUser;
+      
+      if (user != null) {
+        await user.delete();
+        _clearAuthCache();
+        print('✅ User account deleted successfully');
+      } else {
+        throw Exception('No authenticated user found');
+      }
+    } catch (e) {
+      print('❌ Failed to delete account: $e');
+      
+      if (e is FirebaseAuthException) {
+        switch (e.code) {
+          case 'requires-recent-login':
+            throw FirebaseAuthException(
+              code: e.code,
+              message: 'This operation requires recent authentication. Please sign in again and try again.',
+            );
+          default:
+            rethrow;
+        }
+      }
+      rethrow;
     }
   }
 
+  // ==========================================
+  // GOOGLE SIGN-IN (Firebase only)
+  // ==========================================
+  
   // Google Sign-in methods
   Future<User?> signInWithGoogle() async {
-    await _ensureFirebaseReady();
-    
     try {
+      if (_useMockAuth) {
+        print('⚠️ Google Sign-In not available in mock mode');
+        print('ℹ️ Please use demo credentials: $_demoEmail / $_demoPassword');
+        throw FirebaseAuthException(
+          code: 'operation-not-supported',
+          message: 'Google Sign-In is not available in demo mode. Please use demo credentials:\nEmail: $_demoEmail\nPassword: $_demoPassword',
+        );
+      }
+      
+      await _ensureFirebaseReady();
+      
       print('🔐 Attempting Google Sign-In');
       
       // Trigger the authentication flow
@@ -618,32 +983,59 @@ class AuthService {
       final userCredential = await FirebaseAuth.instance.signInWithCredential(credential);
       
       print('✅ Google Sign-In successful for user: ${userCredential.user?.email}');
+      _clearAuthCache();
       return userCredential.user;
     } catch (e) {
       print('❌ Google Sign-In failed: $e');
+      _clearAuthCache();
       rethrow;
     }
   }
 
   Future<void> signOutGoogle() async {
     try {
+      if (_useMockAuth) {
+        print('🎭 Mock Google sign out');
+        return;
+      }
+      
       await GoogleSignIn().signOut();
       await FirebaseAuth.instance.signOut();
+      _clearAuthCache();
       print('✅ Google Sign-Out successful');
     } catch (e) {
       print('❌ Google Sign-Out failed: $e');
+      _clearAuthCache();
       rethrow;
     }
   }
 
+  // ==========================================
+  // SESSION MONITORING AND VALIDATION
+  // ==========================================
+  
   // Session management
   bool get hasValidSession {
-    final user = FirebaseAuth.instance.currentUser;
-    return user != null && !user.isAnonymous;
+    try {
+      if (_useMockAuth) {
+        return _mockUser != null && !_mockUser!.isAnonymous;
+      }
+      
+      final user = FirebaseAuth.instance.currentUser;
+      return user != null && !user.isAnonymous;
+    } catch (e) {
+      print('❌ Session validation failed: $e');
+      return false;
+    }
   }
 
   Future<bool> isSessionExpired() async {
     try {
+      if (_useMockAuth) {
+        // Mock sessions don't expire
+        return _mockUser == null;
+      }
+      
       final user = FirebaseAuth.instance.currentUser;
       if (user == null) return true;
       
@@ -658,6 +1050,11 @@ class AuthService {
 
   Future<void> refreshSession() async {
     try {
+      if (_useMockAuth) {
+        print('🎭 Mock session refresh');
+        return;
+      }
+      
       final user = FirebaseAuth.instance.currentUser;
       if (user != null) {
         await user.getIdToken(true);
