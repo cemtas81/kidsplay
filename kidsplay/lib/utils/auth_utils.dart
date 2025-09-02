@@ -6,8 +6,8 @@ import '../services/auth_service.dart';
 class AuthUtils {
   static final AuthService _authService = AuthService();
 
-  /// Get current user safely
-  static User? get currentUser => FirebaseAuth.instance.currentUser;
+  /// Get current user safely through AuthService
+  static User? get currentUser => _authService.getCurrentUser();
 
   /// Check if user is fully authenticated (not anonymous and email verified)
   static bool get isFullyAuthenticated {
