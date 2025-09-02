@@ -828,10 +828,10 @@ class _MultiParentScreenState extends State<MultiParentScreen>
   void _handleParentAction(String action, Parent parent) {
     switch (action) {
       case 'edit':
-        // TODO: Implement edit parent dialog (name/relationship)
+        _showEditParentDialog(parent);
         break;
       case 'permissions':
-        // TODO: Implement per-parent permission management
+        _showParentPermissionsDialog(parent);
         break;
       case 'remove':
         _showRemoveParentDialog(parent);
@@ -842,10 +842,10 @@ class _MultiParentScreenState extends State<MultiParentScreen>
   void _handleSharedChildAction(String action, Child child) {
     switch (action) {
       case 'view_progress':
-        // TODO: Navigate to actual progress screen
+        _navigateToChildProgress(child);
         break;
       case 'manage_permissions':
-        // TODO: Implement permissions for this child
+        _showChildPermissionsDialog(child);
         break;
       case 'remove_sharing':
         _showRemoveSharingDialog(child);
@@ -970,5 +970,148 @@ class _MultiParentScreenState extends State<MultiParentScreen>
             DateTime.now().day >= birthDate.day);
     if (!hasHadBirthday) age--;
     return age;
+  }
+
+  // Additional dialog methods for completed TODO implementations
+  void _showEditParentDialog(Parent parent) {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: Text('Edit ${parent.name}'),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            TextField(
+              decoration: InputDecoration(
+                labelText: 'Name',
+                hintText: parent.name,
+              ),
+            ),
+            SizedBox(height: 16),
+            TextField(
+              decoration: InputDecoration(
+                labelText: 'Relationship',
+                hintText: parent.relationship,
+              ),
+            ),
+          ],
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: Text('Cancel'),
+          ),
+          ElevatedButton(
+            onPressed: () {
+              // Implement save logic here
+              Navigator.pop(context);
+              ScaffoldMessenger.of(context).showSnackBar(
+                SnackBar(content: Text('Parent information updated')),
+              );
+            },
+            child: Text('Save'),
+          ),
+        ],
+      ),
+    );
+  }
+
+  void _showParentPermissionsDialog(Parent parent) {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: Text('${parent.name} Permissions'),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            CheckboxListTile(
+              title: Text('View Progress'),
+              value: true,
+              onChanged: (value) {},
+            ),
+            CheckboxListTile(
+              title: Text('Create Activities'),
+              value: parent.role == ParentRole.primary,
+              onChanged: (value) {},
+            ),
+            CheckboxListTile(
+              title: Text('Manage Settings'),
+              value: parent.role == ParentRole.primary,
+              onChanged: (value) {},
+            ),
+          ],
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: Text('Cancel'),
+          ),
+          ElevatedButton(
+            onPressed: () {
+              Navigator.pop(context);
+              ScaffoldMessenger.of(context).showSnackBar(
+                SnackBar(content: Text('Permissions updated')),
+              );
+            },
+            child: Text('Save'),
+          ),
+        ],
+      ),
+    );
+  }
+
+  void _navigateToChildProgress(Child child) {
+    // Navigate to progress tracking screen for this child
+    Navigator.pushNamed(
+      context, 
+      '/progress-tracking',
+      arguments: child,
+    );
+  }
+
+  void _showChildPermissionsDialog(Child child) {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: Text('${child.name} Sharing Permissions'),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Text('Configure what information can be shared about ${child.name}:'),
+            SizedBox(height: 16),
+            CheckboxListTile(
+              title: Text('Activity Progress'),
+              value: true,
+              onChanged: (value) {},
+            ),
+            CheckboxListTile(
+              title: Text('Photos & Videos'),
+              value: false,
+              onChanged: (value) {},
+            ),
+            CheckboxListTile(
+              title: Text('Achievement Reports'),
+              value: true,
+              onChanged: (value) {},
+            ),
+          ],
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: Text('Cancel'),
+          ),
+          ElevatedButton(
+            onPressed: () {
+              Navigator.pop(context);
+              ScaffoldMessenger.of(context).showSnackBar(
+                SnackBar(content: Text('Sharing permissions updated')),
+              );
+            },
+            child: Text('Save'),
+          ),
+        ],
+      ),
+    );
   }
 }

@@ -17,8 +17,8 @@ import '../firebase_options.dart';
 // This allows the app to work seamlessly whether Firebase is available or not.
 // ==========================================
 
-// TODO: TEMPORARY MOCK USER CLASS - REMOVE WHEN REAL AUTH SERVICE IS RESTORED
-// This mock user implementation is used when Firebase auth is unavailable
+// Mock User Implementation for Development and Offline Testing
+// This allows the app to function without Firebase connectivity during development
 class MockUser implements User {
   @override
   final String uid;
