@@ -259,9 +259,8 @@ class _ChildProfileCreationState extends State<ChildProfileCreation>
                 SizedBox(height: 3.h),
                 ElevatedButton(
                   onPressed: () {
-                    Navigator.pop(context);
-                    Navigator.pushReplacementNamed(
-                        context, '/child-selection-dashboard');
+                    Navigator.pop(context); // Close dialog
+                    Navigator.pop(context); // Return to dashboard (this will trigger the .then() callback)
                   },
                   style: ElevatedButton.styleFrom(
                     backgroundColor: AppTheme.lightTheme.colorScheme.primary,

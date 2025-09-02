@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:sizer/sizer.dart';
@@ -30,12 +31,17 @@ class ChildSelectionDashboard extends StatefulWidget {
 class _ChildSelectionDashboardState extends State<ChildSelectionDashboard> {
   int _currentTabIndex = 0;
   bool _isRefreshing = false;
+  bool _isLoading = true;
   DateTime _lastUpdated = DateTime.now();
   
   // Real data from database
   List<Child> _children = [];
   String? _currentUserId;
   final ChildRepository _childRepository = ChildRepository();
+  
+  // Cache authentication state to avoid repeated calls
+  User? _cachedUser;
+  DateTime? _lastAuthCheck;
 
   @override
   void initState() {
@@ -43,42 +49,119 @@ class _ChildSelectionDashboardState extends State<ChildSelectionDashboard> {
     _loadChildren();
   }
 
+  // Check if we need to refresh authentication (cache for 5 minutes)
+  bool _needsAuthRefresh() {
+    if (_cachedUser == null || _lastAuthCheck == null) return true;
+    return DateTime.now().difference(_lastAuthCheck!).inMinutes > 5;
+  }
+
   Future<void> _loadChildren() async {
+    if (!mounted) return;
+    
+    setState(() {
+      _isLoading = true;
+    });
+
     try {
-      // Check if user is authenticated first
-      final authService = AuthService();
-      final currentUser = authService.getCurrentUser();
-      
-      if (currentUser == null) {
-        // User is not authenticated at all, redirect to login
-        if (mounted) {
-          Navigator.pushReplacementNamed(context, '/parent-login');
+      // Check cached authentication first
+      if (_needsAuthRefresh()) {
+        final authService = AuthService();
+        final currentUser = authService.getCurrentUser();
+        
+        if (currentUser == null) {
+          // User is not authenticated at all, redirect to login
+          if (mounted) {
+            Navigator.pushReplacementNamed(context, '/parent-login');
+          }
+          return;
         }
-        return;
+        
+        // Cache the user and timestamp
+        _cachedUser = currentUser;
+        _lastAuthCheck = DateTime.now();
+        
+        // For anonymous users (demo mode), still allow access
+        if (currentUser.isAnonymous) {
+          print('📝 Demo mode: Using anonymous user');
+        }
       }
       
-      // For anonymous users (demo mode), still allow access
-      if (currentUser.isAnonymous) {
-        print('📝 Demo mode: Using anonymous user');
+      // Use cached user if available, otherwise ensure signed in
+      User user;
+      if (_cachedUser != null) {
+        user = _cachedUser!;
+      } else {
+        try {
+          user = await AuthService.ensureInitializedAndSignedIn()
+              .timeout(Duration(seconds: 10)); // 10 second timeout
+          _cachedUser = user;
+          _lastAuthCheck = DateTime.now();
+        } on TimeoutException {
+          throw Exception('Authentication timeout - please check your connection');
+        }
       }
       
-      final user = await AuthService.ensureInitializedAndSignedIn();
-      setState(() {
-        _currentUserId = user.uid;
-      });
-      
-      // Listen to children updates
-      _childRepository.watchChildrenOf(user.uid).listen((children) {
+      if (mounted) {
         setState(() {
-          _children = children;
-          _lastUpdated = DateTime.now();
+          _currentUserId = user.uid;
         });
-      });
+      }
+      
+      // Listen to children updates with better error handling
+      _childRepository.watchChildrenOf(user.uid).listen(
+        (children) {
+          if (mounted) {
+            setState(() {
+              _children = children;
+              _lastUpdated = DateTime.now();
+              _isLoading = false;
+            });
+          }
+        },
+        onError: (error) {
+          print('Error in children stream: $error');
+          if (mounted) {
+            setState(() {
+              _isLoading = false;
+            });
+            // Show error message to user
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(
+                content: Text('Failed to load children: $error'),
+                backgroundColor: Theme.of(context).colorScheme.error,
+                action: SnackBarAction(
+                  label: 'Retry',
+                  onPressed: () => _loadChildren(),
+                ),
+              ),
+            );
+          }
+        },
+      );
     } catch (error) {
       print('Error loading children: $error');
-      // If authentication fails, redirect to login
       if (mounted) {
-        Navigator.pushReplacementNamed(context, '/parent-login');
+        setState(() {
+          _isLoading = false;
+        });
+        
+        // If authentication fails, redirect to login
+        if (error.toString().contains('authentication') || 
+            error.toString().contains('permission')) {
+          Navigator.pushReplacementNamed(context, '/parent-login');
+        } else {
+          // Show generic error with retry option
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text('Error loading children: $error'),
+              backgroundColor: Theme.of(context).colorScheme.error,
+              action: SnackBarAction(
+                label: 'Retry',
+                onPressed: () => _loadChildren(),
+              ),
+            ),
+          );
+        }
       }
     }
   }
@@ -95,16 +178,74 @@ class _ChildSelectionDashboardState extends State<ChildSelectionDashboard> {
     final theme = Theme.of(context);
     final isDark = theme.brightness == Brightness.dark;
 
-    return Scaffold(
-      backgroundColor:
-          isDark ? AppTheme.backgroundDark : AppTheme.backgroundLight,
-      body: Column(
-        children: [
-          DashboardHeader(
-            parentName: "Sarah",
-            notificationCount: 3,
-            onProfileTap: () => _navigateToProfile(),
-            onSettingsTap: () => _navigateToSettings(),
+    // Show loading indicator while loading
+    if (_isLoading) {
+      return Scaffold(
+        backgroundColor:
+            isDark ? AppTheme.backgroundDark : AppTheme.backgroundLight,
+        body: Center(
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              CircularProgressIndicator(
+                color: isDark ? AppTheme.primaryDark : AppTheme.primaryLight,
+              ),
+              SizedBox(height: 2.h),
+              Text(
+                'Loading your children...',
+                style: theme.textTheme.bodyLarge?.copyWith(
+                  color: isDark 
+                      ? AppTheme.textSecondaryDark 
+                      : AppTheme.textSecondaryLight,
+                ),
+              ),
+            ],
+          ),
+        ),
+      );
+    }
+
+    return PopScope(
+      canPop: false,
+      onPopInvoked: (didPop) async {
+        if (didPop) return;
+        
+        // Show exit confirmation dialog
+        final shouldExit = await showDialog<bool>(
+          context: context,
+          builder: (context) => AlertDialog(
+            title: Text('Exit KidsPlay'),
+            content: Text('Are you sure you want to exit the app?'),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.pop(context, false),
+                child: Text('Cancel'),
+              ),
+              ElevatedButton(
+                onPressed: () => Navigator.pop(context, true),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: theme.colorScheme.error,
+                ),
+                child: Text('Exit'),
+              ),
+            ],
+          ),
+        );
+        
+        if (shouldExit == true) {
+          Navigator.of(context).pop();
+        }
+      },
+      child: Scaffold(
+        backgroundColor:
+            isDark ? AppTheme.backgroundDark : AppTheme.backgroundLight,
+        body: Column(
+          children: [
+            DashboardHeader(
+              parentName: "Sarah",
+              notificationCount: 3,
+              onProfileTap: () => _navigateToProfile(),
+              onSettingsTap: () => _navigateToSettings(),
             onNotificationsTap: () => _navigateToNotifications(),
           ),
           CustomTabNavigation(
@@ -118,6 +259,7 @@ class _ChildSelectionDashboardState extends State<ChildSelectionDashboard> {
       ),
       floatingActionButton:
           _currentTabIndex == 0 ? _buildFloatingActionButton() : null,
+    ),
     );
   }
 
@@ -431,20 +573,57 @@ class _ChildSelectionDashboardState extends State<ChildSelectionDashboard> {
   }
 
   Future<void> _refreshData() async {
+    if (_isRefreshing) return; // Prevent multiple simultaneous refreshes
+    
     setState(() {
       _isRefreshing = true;
     });
 
-    // Refresh children data from database
-    await _loadChildren();
+    try {
+      // Force refresh authentication cache
+      _cachedUser = null;
+      _lastAuthCheck = null;
+      
+      // Refresh children data from database
+      await _loadChildren();
 
-    setState(() {
-      _isRefreshing = false;
-      _lastUpdated = DateTime.now();
-    });
+      if (mounted) {
+        setState(() {
+          _isRefreshing = false;
+          _lastUpdated = DateTime.now();
+        });
 
-    // Provide haptic feedback
-    HapticFeedback.mediumImpact();
+        // Provide haptic feedback
+        HapticFeedback.mediumImpact();
+        
+        // Show success message
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Dashboard refreshed'),
+            backgroundColor: Theme.of(context).colorScheme.primary,
+            duration: Duration(seconds: 1),
+            behavior: SnackBarBehavior.floating,
+          ),
+        );
+      }
+    } catch (error) {
+      if (mounted) {
+        setState(() {
+          _isRefreshing = false;
+        });
+        
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Failed to refresh: $error'),
+            backgroundColor: Theme.of(context).colorScheme.error,
+            action: SnackBarAction(
+              label: 'Retry',
+              onPressed: () => _refreshData(),
+            ),
+          ),
+        );
+      }
+    }
   }
 
   // Helper method to convert Child object to Map format for ChildProfileCard
@@ -579,7 +758,11 @@ class _ChildSelectionDashboardState extends State<ChildSelectionDashboard> {
 
   void _addNewChild() {
     HapticFeedback.lightImpact();
-    Navigator.pushNamed(context, '/child-profile-creation');
+    Navigator.pushNamed(context, '/child-profile-creation').then((_) {
+      // When returning from child creation, refresh the dashboard
+      print('Returned from child creation, refreshing dashboard...');
+      _refreshData();
+    });
   }
 
   void _navigateToProfile() {

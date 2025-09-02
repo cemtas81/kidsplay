@@ -187,6 +187,10 @@ class AuthService {
   static const String _mockUserId = 'mock-user-12345';
   static User? _mockUser; // Store mock user for session persistence
   
+  // Cache for authentication state to reduce Firebase calls
+  static DateTime? _lastAuthCheck;
+  static bool? _lastAuthResult;
+  
   static Future<void> _ensureFirebaseReady() async {
     // Skip Firebase initialization check in mock mode
     if (_useMockAuth) {
@@ -385,10 +389,16 @@ class AuthService {
     if (_useMockAuth) {
       print('🎭 Mock sign out');
       _mockUser = null;
+      // Clear auth cache
+      _lastAuthCheck = null;
+      _lastAuthResult = null;
       return;
     }
     
     await FirebaseAuth.instance.signOut();
+    // Clear auth cache
+    _lastAuthCheck = null;
+    _lastAuthResult = null;
   }
 
   User? getCurrentUser() {
@@ -402,13 +412,27 @@ class AuthService {
 
   // Check if user is authenticated (not anonymous)
   bool isAuthenticated() {
-    // TODO: TEMPORARY MOCK AUTH HANDLING - REMOVE WHEN REAL AUTH SERVICE IS RESTORED
-    if (_useMockAuth) {
-      return _mockUser != null && !_mockUser!.isAnonymous;
+    // Use cached result if available and recent (within 30 seconds)
+    if (_lastAuthCheck != null && 
+        _lastAuthResult != null && 
+        DateTime.now().difference(_lastAuthCheck!).inSeconds < 30) {
+      return _lastAuthResult!;
     }
     
-    final user = FirebaseAuth.instance.currentUser;
-    return user != null && !user.isAnonymous;
+    // TODO: TEMPORARY MOCK AUTH HANDLING - REMOVE WHEN REAL AUTH SERVICE IS RESTORED
+    bool result;
+    if (_useMockAuth) {
+      result = _mockUser != null && !_mockUser!.isAnonymous;
+    } else {
+      final user = FirebaseAuth.instance.currentUser;
+      result = user != null && !user.isAnonymous;
+    }
+    
+    // Cache the result
+    _lastAuthCheck = DateTime.now();
+    _lastAuthResult = result;
+    
+    return result;
   }
 
   // Get current user safely with error handling
