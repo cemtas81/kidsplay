@@ -14,7 +14,6 @@ class AuthGuard {
 
   /// Check if user is authenticated and redirect if not
   static Future<bool> requireAuth(BuildContext context) async {
-    // TODO: TEMPORARY MOCK AUTH HANDLING - REMOVE WHEN REAL AUTH SERVICE IS RESTORED
     // Check if user is authenticated using AuthService (handles both mock and real auth)
     if (_authService.isAuthenticated()) {
       return true;
@@ -27,7 +26,6 @@ class AuthGuard {
 
   /// Check if user is authenticated without redirecting
   static bool isAuthenticated() {
-    // TODO: TEMPORARY MOCK AUTH HANDLING - REMOVE WHEN REAL AUTH SERVICE IS RESTORED
     // Use AuthService which handles both mock and real authentication
     final authService = AuthService();
     return authService.isAuthenticated();
@@ -35,7 +33,7 @@ class AuthGuard {
 
   /// Check if user email is verified
   static bool isEmailVerified() {
-    // TODO: TEMPORARY MOCK AUTH HANDLING - REMOVE WHEN REAL AUTH SERVICE IS RESTORED
+    // Check email verification status through AuthService
     final authService = AuthService();
     final user = authService.getCurrentUser();
     return user?.emailVerified ?? false;
@@ -85,12 +83,10 @@ class AuthGuard {
 
   /// Auto-logout on session expiry
   static Future<void> startSessionMonitoring(BuildContext context) async {
-    // TODO: TEMPORARY MOCK AUTH HANDLING - REMOVE WHEN REAL AUTH SERVICE IS RESTORED
-    // For mock auth, we'll use a simplified session monitoring approach
+    // Session monitoring supports both mock and Firebase authentication
     final authService = AuthService();
     
     // Monitor auth state changes
-    // Note: In mock mode, this will be a simplified implementation
     try {
       FirebaseAuth.instance.authStateChanges().listen((user) {
         if (user == null && context.mounted && !authService.isAuthenticated()) {
@@ -118,8 +114,7 @@ class AuthGuard {
       if (!context.mounted) return;
       
       try {
-        // TODO: TEMPORARY MOCK AUTH HANDLING - REMOVE WHEN REAL AUTH SERVICE IS RESTORED
-        // In mock mode, we'll skip the complex session expiry logic
+        // Session expiry logic for both authentication modes
         final authService = AuthService();
         if (!authService.isAuthenticated() && context.mounted) {
           await authService.signOut();

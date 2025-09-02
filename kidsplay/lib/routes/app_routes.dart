@@ -8,9 +8,10 @@ import '../presentation/child_selection_dashboard/child_selection_dashboard.dart
 import '../presentation/multi_parent_management/multi_parent_screen.dart';
 import '../presentation/password_reset/password_reset_screen.dart';
 import '../presentation/email_verification/email_verification_screen.dart';
+import '../presentation/progress_tracking/progress_dashboard_screen.dart';
 
 class AppRoutes {
-  // TODO: Add your routes here
+  // Application route constants
   static const String initial = '/';
   static const String parentLogin = '/parent-login';
   static const String childProfileCreation = '/child-profile-creation';
@@ -21,6 +22,7 @@ class AppRoutes {
   static const String multiParentManagement = '/multi-parent-management';
   static const String passwordReset = '/password-reset';
   static const String emailVerification = '/email-verification';
+  static const String progressTracking = '/progress-tracking';
 
   static Map<String, WidgetBuilder> routes = {
     initial: (context) => const SplashScreen(),
@@ -33,6 +35,6 @@ class AppRoutes {
     multiParentManagement: (context) => const MultiParentScreen(),
     passwordReset: (context) => const PasswordResetScreen(),
     emailVerification: (context) => const EmailVerificationScreen(),
-    // TODO: Add your other routes here
+    progressTracking: (context) => const ProgressDashboardScreen(),
   };
 }
