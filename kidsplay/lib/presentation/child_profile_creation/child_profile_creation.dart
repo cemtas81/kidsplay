@@ -293,15 +293,40 @@ class _ChildProfileCreationState extends State<ChildProfileCreation>
         );
       }
     } catch (error) {
-      // Handle errors gracefully
+      PerformanceMonitor.end('createChildProfile');
+      PerformanceMonitor.logSummary();
+      
+      print('❌ Error creating child profile: $error');
+      
+      // Handle errors gracefully with more specific error messages
       if (mounted) {
+        String errorMessage = 'Error creating profile';
+        
+        // Provide more specific error messages based on error type
+        if (error.toString().contains('authentication') || 
+            error.toString().contains('permission')) {
+          errorMessage = 'Authentication error. Please try logging in again.';
+        } else if (error.toString().contains('network') || 
+                   error.toString().contains('timeout')) {
+          errorMessage = 'Network error. Please check your connection and try again.';
+        } else if (error.toString().contains('Failed to save child')) {
+          errorMessage = 'Could not save child profile. Please try again.';
+        } else {
+          errorMessage = 'Error creating profile. Please try again.';
+        }
+        
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text('Error creating profile: ${error.toString()}'),
+            content: Text(errorMessage),
             backgroundColor: AppTheme.lightTheme.colorScheme.error,
             behavior: SnackBarBehavior.floating,
             shape: RoundedRectangleBorder(
               borderRadius: BorderRadius.circular(12),
+            ),
+            action: SnackBarAction(
+              label: 'Retry',
+              textColor: Colors.white,
+              onPressed: () => _completeProfile(),
             ),
           ),
         );
