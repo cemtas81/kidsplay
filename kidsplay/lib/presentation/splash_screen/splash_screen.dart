@@ -28,7 +28,10 @@ class _SplashScreenState extends State<SplashScreen>
   void initState() {
     super.initState();
     _initializeAnimations();
-    _startSplashSequence();
+    // Defer context-dependent work until after the first frame
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _startSplashSequence();
+    });
   }
 
   void _initializeAnimations() {
@@ -98,6 +101,8 @@ class _SplashScreenState extends State<SplashScreen>
       // Check Firebase authentication state
       final user = FirebaseAuth.instance.currentUser;
       
+      String targetRoute = '/parent-onboarding'; // Default route
+      
       if (user != null) {
         // User is signed in, check if email is verified and if they have children
         if (user.emailVerified || user.isAnonymous) {
@@ -105,29 +110,29 @@ class _SplashScreenState extends State<SplashScreen>
           final childRepository = ChildRepository();
           final children = await childRepository.watchChildrenOf(user.uid).first;
           
-          // Store navigation decision for later
-          setState(() {
-            if (children.isNotEmpty) {
-              _targetRoute = '/child-selection-dashboard';
-            } else {
-              _targetRoute = '/child-profile-creation';
-            }
-          });
+          // Determine navigation decision
+          if (children.isNotEmpty) {
+            targetRoute = '/child-selection-dashboard';
+          } else {
+            targetRoute = '/child-profile-creation';
+          }
           
-          debugPrint('✅ User authenticated, navigating to: $_targetRoute');
+          debugPrint('✅ User authenticated, navigating to: $targetRoute');
         } else {
           // User exists but email not verified
-          setState(() {
-            _targetRoute = '/email-verification';
-          });
+          targetRoute = '/email-verification';
           debugPrint('⚠️ User email not verified, redirecting to email verification');
         }
       } else {
         // No authenticated user
-        setState(() {
-          _targetRoute = '/parent-onboarding';
-        });
         debugPrint('ℹ️ No authenticated user, showing onboarding');
+      }
+
+      // Store navigation decision safely after async operations complete
+      if (mounted) {
+        setState(() {
+          _targetRoute = targetRoute;
+        });
       }
 
       // Simulate loading time for better UX
@@ -135,9 +140,11 @@ class _SplashScreenState extends State<SplashScreen>
     } catch (e) {
       // Handle initialization errors gracefully
       debugPrint('⚠️ Initialization error: $e');
-      setState(() {
-        _targetRoute = '/parent-onboarding';
-      });
+      if (mounted) {
+        setState(() {
+          _targetRoute = '/parent-onboarding';
+        });
+      }
     }
   }
 
