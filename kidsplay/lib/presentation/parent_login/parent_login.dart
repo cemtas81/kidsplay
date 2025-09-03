@@ -33,6 +33,8 @@ class _ParentLoginState extends State<ParentLogin> {
   }
 
   Future<void> _handleLogin(String email, String password) async {
+    if (!mounted) return;
+    
     setState(() {
       _isLoading = true;
       _errorMessage = null;
@@ -50,17 +52,21 @@ class _ParentLoginState extends State<ParentLogin> {
         final childRepository = ChildRepository();
         final children = await childRepository.watchChildrenOf(user.uid).first;
         
-        if (children.isNotEmpty) {
-          Navigator.pushReplacementNamed(context, '/child-selection-dashboard');
-        } else {
-          Navigator.pushReplacementNamed(context, '/child-profile-creation');
+        if (mounted) {
+          if (children.isNotEmpty) {
+            Navigator.pushReplacementNamed(context, '/child-selection-dashboard');
+          } else {
+            Navigator.pushReplacementNamed(context, '/child-profile-creation');
+          }
         }
       }
     } catch (error) {
       HapticFeedback.heavyImpact();
-      setState(() {
-        _errorMessage = _getErrorMessage(error.toString());
-      });
+      if (mounted) {
+        setState(() {
+          _errorMessage = _getErrorMessage(error.toString());
+        });
+      }
     } finally {
       if (mounted) {
         setState(() {
@@ -114,6 +120,8 @@ class _ParentLoginState extends State<ParentLogin> {
   }
 
   Future<void> _handleSocialLogin(String provider) async {
+    if (!mounted) return;
+    
     setState(() {
       _isLoading = true;
       _errorMessage = null;
@@ -138,12 +146,14 @@ class _ParentLoginState extends State<ParentLogin> {
         final childRepository = ChildRepository();
         final children = await childRepository.watchChildrenOf(user.uid).first;
         
-        if (children.isNotEmpty) {
-          Navigator.pushReplacementNamed(context, '/child-selection-dashboard');
-        } else {
-          Navigator.pushReplacementNamed(context, '/child-profile-creation');
+        if (mounted) {
+          if (children.isNotEmpty) {
+            Navigator.pushReplacementNamed(context, '/child-selection-dashboard');
+          } else {
+            Navigator.pushReplacementNamed(context, '/child-profile-creation');
+          }
         }
-      } else if (user == null) {
+      } else if (user == null && mounted) {
         // User canceled the sign-in
         setState(() {
           _errorMessage = null; // Don't show error for user cancellation
@@ -151,9 +161,11 @@ class _ParentLoginState extends State<ParentLogin> {
       }
     } catch (error) {
       HapticFeedback.heavyImpact();
-      setState(() {
-        _errorMessage = _getSocialLoginErrorMessage(provider, error.toString());
-      });
+      if (mounted) {
+        setState(() {
+          _errorMessage = _getSocialLoginErrorMessage(provider, error.toString());
+        });
+      }
     } finally {
       if (mounted) {
         setState(() {
