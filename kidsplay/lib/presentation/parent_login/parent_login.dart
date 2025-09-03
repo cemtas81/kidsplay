@@ -117,6 +117,23 @@ class _ParentLoginState extends State<ParentLogin> {
   Future<void> _handleMockSignIn() async {
     if (!mounted) return;
     
+    // Show snackbar if not in mock mode (fallback safety)
+    if (!AuthService.isUsingMockAuth) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: const Text('Direct login is only available in mock mode.'),
+              duration: const Duration(seconds: 3),
+              behavior: SnackBarBehavior.floating,
+              backgroundColor: Theme.of(context).colorScheme.error,
+            ),
+          );
+        }
+      });
+      return;
+    }
+    
     setState(() {
       _isLoading = true;
       _errorMessage = null;
@@ -151,7 +168,7 @@ class _ParentLoginState extends State<ParentLogin> {
       HapticFeedback.heavyImpact();
       if (mounted) {
         setState(() {
-          _errorMessage = 'Mock sign-in failed: ${error.toString()}';
+          _errorMessage = 'Demo sign-in failed. Please try using the demo credentials manually:\nEmail: demo@demo.com\nPassword: demo1234';
         });
       }
     } finally {
@@ -346,39 +363,42 @@ class _ParentLoginState extends State<ParentLogin> {
                         child: Column(
                           children: [
                             // Direct Login Button
-                            GestureDetector(
-                              onTap: _isLoading ? null : _handleMockSignIn,
-                              child: Container(
-                                width: 12.w,
-                                height: 12.w,
-                                decoration: BoxDecoration(
-                                  shape: BoxShape.circle,
-                                  color: theme.colorScheme.secondary.withValues(alpha: 0.1),
-                                  border: Border.all(
-                                    color: theme.colorScheme.secondary.withValues(alpha: 0.3),
-                                    width: 2,
+                            Tooltip(
+                              message: 'Quick sign-in with demo user (demo@demo.com)',
+                              child: GestureDetector(
+                                onTap: _isLoading ? null : _handleMockSignIn,
+                                child: Container(
+                                  width: 12.w,
+                                  height: 12.w,
+                                  decoration: BoxDecoration(
+                                    shape: BoxShape.circle,
+                                    color: theme.colorScheme.secondary.withValues(alpha: 0.1),
+                                    border: Border.all(
+                                      color: theme.colorScheme.secondary.withValues(alpha: 0.3),
+                                      width: 2,
+                                    ),
                                   ),
-                                ),
-                                child: _isLoading
-                                    ? Center(
-                                        child: SizedBox(
-                                          width: 4.w,
-                                          height: 4.w,
-                                          child: CircularProgressIndicator(
-                                            strokeWidth: 2,
-                                            valueColor: AlwaysStoppedAnimation<Color>(
-                                              theme.colorScheme.secondary,
+                                  child: _isLoading
+                                      ? Center(
+                                          child: SizedBox(
+                                            width: 4.w,
+                                            height: 4.w,
+                                            child: CircularProgressIndicator(
+                                              strokeWidth: 2,
+                                              valueColor: AlwaysStoppedAnimation<Color>(
+                                                theme.colorScheme.secondary,
+                                              ),
                                             ),
                                           ),
+                                        )
+                                      : Center(
+                                          child: CustomIconWidget(
+                                            iconName: 'fingerprint',
+                                            color: theme.colorScheme.secondary,
+                                            size: 6.w,
+                                          ),
                                         ),
-                                      )
-                                    : Center(
-                                        child: CustomIconWidget(
-                                          iconName: 'fingerprint',
-                                          color: theme.colorScheme.secondary,
-                                          size: 6.w,
-                                        ),
-                                      ),
+                                ),
                               ),
                             ),
 
