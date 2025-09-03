@@ -114,6 +114,72 @@ class _ParentLoginState extends State<ParentLogin> {
     });
   }
 
+  Future<void> _handleMockSignIn() async {
+    if (!mounted) return;
+    
+    // Show snackbar if not in mock mode (fallback safety)
+    if (!AuthService.isUsingMockAuth) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: const Text('Direct login is only available in mock mode.'),
+              duration: const Duration(seconds: 3),
+              behavior: SnackBarBehavior.floating,
+              backgroundColor: Theme.of(context).colorScheme.error,
+            ),
+          );
+        }
+      });
+      return;
+    }
+    
+    setState(() {
+      _isLoading = true;
+      _errorMessage = null;
+    });
+
+    try {
+      // Use AuthService mock sign-in
+      final authService = AuthService();
+      final user = await authService.signInAsMockUser();
+      
+      if (user != null && mounted) {
+        HapticFeedback.lightImpact();
+        
+        // Check if user has children to determine navigation
+        final childRepository = ChildRepository();
+        final children = await childRepository.watchChildrenOf(user.uid).first;
+        
+        if (mounted) {
+          // Use post-frame callback for safe navigation
+          WidgetsBinding.instance.addPostFrameCallback((_) {
+            if (mounted) {
+              if (children.isNotEmpty) {
+                Navigator.pushReplacementNamed(context, '/child-selection-dashboard');
+              } else {
+                Navigator.pushReplacementNamed(context, '/child-profile-creation');
+              }
+            }
+          });
+        }
+      }
+    } catch (error) {
+      HapticFeedback.heavyImpact();
+      if (mounted) {
+        setState(() {
+          _errorMessage = 'Demo sign-in failed. Please try using the demo credentials manually:\nEmail: demo@demo.com\nPassword: demo1234';
+        });
+      }
+    } finally {
+      if (mounted) {
+        setState(() {
+          _isLoading = false;
+        });
+      }
+    }
+  }
+
   void _handleForgotPassword() {
     // Navigate to password reset screen
     Navigator.pushNamed(context, '/password-reset');
@@ -289,6 +355,100 @@ class _ParentLoginState extends State<ParentLogin> {
                       onBiometricError: _handleBiometricError,
                       isAvailable: _isBiometricAvailable,
                     ),
+
+                    // Mock Direct Login (Development Mode Only)
+                    if (AuthService.isUsingMockAuth) ...[
+                      Container(
+                        margin: EdgeInsets.symmetric(vertical: 2.h),
+                        child: Column(
+                          children: [
+                            // Direct Login Button
+                            Tooltip(
+                              message: 'Quick sign-in with demo user (demo@demo.com)',
+                              child: GestureDetector(
+                                onTap: _isLoading ? null : _handleMockSignIn,
+                                child: Container(
+                                  width: 12.w,
+                                  height: 12.w,
+                                  decoration: BoxDecoration(
+                                    shape: BoxShape.circle,
+                                    color: theme.colorScheme.secondary.withValues(alpha: 0.1),
+                                    border: Border.all(
+                                      color: theme.colorScheme.secondary.withValues(alpha: 0.3),
+                                      width: 2,
+                                    ),
+                                  ),
+                                  child: _isLoading
+                                      ? Center(
+                                          child: SizedBox(
+                                            width: 4.w,
+                                            height: 4.w,
+                                            child: CircularProgressIndicator(
+                                              strokeWidth: 2,
+                                              valueColor: AlwaysStoppedAnimation<Color>(
+                                                theme.colorScheme.secondary,
+                                              ),
+                                            ),
+                                          ),
+                                        )
+                                      : Center(
+                                          child: CustomIconWidget(
+                                            iconName: 'fingerprint',
+                                            color: theme.colorScheme.secondary,
+                                            size: 6.w,
+                                          ),
+                                        ),
+                                ),
+                              ),
+                            ),
+
+                            SizedBox(height: 1.h),
+
+                            // Direct Login Text
+                            Text(
+                              _isLoading
+                                  ? 'Signing in...'
+                                  : 'Quick Demo Sign-In',
+                              style: theme.textTheme.bodySmall?.copyWith(
+                                color: theme.colorScheme.onSurface.withValues(alpha: 0.6),
+                                fontWeight: FontWeight.w500,
+                              ),
+                              textAlign: TextAlign.center,
+                            ),
+
+                            SizedBox(height: 2.h),
+
+                            // Divider with "OR"
+                            Row(
+                              children: [
+                                Expanded(
+                                  child: Divider(
+                                    color: theme.dividerColor,
+                                    thickness: 1,
+                                  ),
+                                ),
+                                Padding(
+                                  padding: EdgeInsets.symmetric(horizontal: 4.w),
+                                  child: Text(
+                                    'OR',
+                                    style: theme.textTheme.bodySmall?.copyWith(
+                                      color: theme.colorScheme.onSurface.withValues(alpha: 0.6),
+                                      fontWeight: FontWeight.w500,
+                                    ),
+                                  ),
+                                ),
+                                Expanded(
+                                  child: Divider(
+                                    color: theme.dividerColor,
+                                    thickness: 1,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ],
+                        ),
+                      ),
+                    ],
 
                     // Login Form
                     LoginFormWidget(
