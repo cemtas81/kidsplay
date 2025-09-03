@@ -1,0 +1,13 @@
+{
+  "name": "firestore-utils",
+  "private": true,
+  "version": "0.1.0",
+  "type": "module",
+  "dependencies": {
+    "firebase-admin": "^12.6.0"
+  },
+  "scripts": {
+    "purge": "node purge-firestore.js",
+    "seed": "node seed-from-assets.js"
+  }
+}
