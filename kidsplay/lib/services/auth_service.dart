@@ -405,6 +405,46 @@ class AuthService {
     }
   }
 
+  // ==========================================
+  // MOCK DIRECT AUTHENTICATION
+  // ==========================================
+  /// Sign in directly with mock user (development mode only)
+  /// This method bypasses manual credential entry and logs in the demo user immediately
+  Future<User?> signInAsMockUser() async {
+    try {
+      // Only available in mock mode
+      if (!_useMockAuth) {
+        print('❌ Direct mock sign-in not available in production mode');
+        throw FirebaseAuthException(
+          code: 'operation-not-supported',
+          message: 'Direct sign-in is only available in mock mode.',
+        );
+      }
+
+      print('🔑 Direct mock sign-in initiated');
+      
+      // Create and store mock user with demo credentials
+      _mockUser = MockUser(
+        uid: _mockUserId,
+        email: _demoEmail,
+        displayName: 'Demo User',
+        emailVerified: true,
+        isAnonymous: false,
+      );
+      
+      // Clear auth cache
+      _lastAuthCheck = DateTime.now();
+      _lastAuthResult = true;
+      
+      print('✅ Direct mock sign-in successful for: $_demoEmail');
+      return _mockUser;
+    } catch (e) {
+      print('❌ Direct mock sign-in failed: $e');
+      _clearAuthCache();
+      rethrow;
+    }
+  }
+
   Future<User?> createUserWithEmailAndPassword(String email, String password) async {
     try {
       // MOCK AUTHENTICATION MODE
